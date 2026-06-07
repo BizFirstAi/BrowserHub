@@ -1,0 +1,511 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Browser Hub</title>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/browser-studio/shell.css">
+<script src="/browser-studio/shell.js" defer></script>
+<style>
+.admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+@media (max-width:800px) { .admin-grid { grid-template-columns:1fr; } }
+
+.ad-editor { border:1px solid var(--border-1); border-radius:10px; overflow:hidden; margin-bottom:14px; }
+.ad-editor-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-input); border-bottom:1px solid var(--border-1); cursor:pointer; }
+.ad-editor-body { padding:14px; display:flex; flex-direction:column; gap:10px; }
+.ad-editor-body.collapsed { display:none; }
+
+.upload-zone { border:2px dashed var(--border-2); border-radius:8px; padding:20px; text-align:center; cursor:pointer; transition:border-color .2s; }
+.upload-zone:hover { border-color:var(--blue); }
+.upload-zone input[type="file"] { display:none; }
+.upload-preview { width:100%; height:80px; object-fit:cover; border-radius:6px; margin-top:8px; display:none; }
+
+.key-warning { padding:10px 14px; background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.25); border-radius:8px; font-size:13px; color:var(--yellow); }
+</style>
+</head>
+<body class="has-sidebar">
+
+<aside class="sidebar">
+  <div class="sb-brand">
+    <a href="/browser-studio/index.html" class="sb-brand-link">
+      <div class="sb-brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="#fff" stroke="none"/></svg>
+      </div>
+      <div>
+        <div class="sb-brand-name">Browser Hub</div>
+        <div class="sb-brand-sub">Open Source</div>
+      </div>
+    </a>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">
+      <div class="sb-section-label">Web Validator</div>
+      <a class="sb-item" href="/browser-studio/index.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg><span>Dashboard</span></a>
+      <a class="sb-item" href="/browser-studio/scan.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>Live Scan</span></a>
+      <a class="sb-item" href="/browser-studio/results.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Results</span></a>
+      <a class="sb-item" href="/browser-studio/rules.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>Rules</span></a>
+      <a class="sb-item" href="/browser-studio/validator-settings.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Web Extractor</div>
+      <a class="sb-item" href="/browser-studio/extractor.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 8 8 21H3v-5L16 3"/></svg><span>Extractor</span></a>
+      <a class="sb-item" href="/browser-studio/extractor-settings.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Video Studio</div>
+      <a class="sb-item" href="/video-studio/studio.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg><span>Open Studio</span><svg class="sb-ext-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+      <a class="sb-item" href="/browser-studio/video-settings.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Platform</div>
+      <a class="sb-item" href="/browser-studio/admin.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Admin</span></a>
+      <a class="sb-item" href="/browser-studio/observability.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Observability</span></a>
+      <a class="sb-item" href="/browser-studio/webhooks.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span>Webhooks</span></a>
+      <a class="sb-item" href="/browser-studio/proxies.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span>Proxies</span></a>
+      <a class="sb-item" href="/browser-studio/docs.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span>Docs</span></a>
+    </div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-user-info">
+        <div class="sb-user-dot"></div>
+        <span class="sb-user-name" id="sbUserName">...</span>
+      </div>
+      <button class="sb-signout" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+</aside>
+
+<main class="main-area">
+
+<div class="page-wrap">
+  <div class="container">
+
+    <div class="hero">
+      <div class="hero-eyebrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        Administration
+      </div>
+      <h1>App Configuration</h1>
+      <p>Change branding, logo, app title and manage the ads shown in the sidebar. All settings are stored in <code>config/app.config.json</code>.</p>
+    </div>
+
+    <!-- API key entry -->
+    <div class="card" style="margin-bottom:24px;">
+      <div class="card-header"><h2>Admin Authentication</h2></div>
+      <div class="card-body">
+        <div class="key-warning" style="margin-bottom:12px;">The admin key is set in <code>config/app.config.json</code> under <code>"adminKey"</code>. Change it from the default before deploying.</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="password" id="adminKey" class="form-control" placeholder="Enter admin key" style="max-width:320px;">
+          <button id="loadConfigBtn" class="btn btn-primary">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Load Config
+          </button>
+        </div>
+        <div id="authError" class="hidden" style="color:var(--red);font-size:13px;margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <div id="configSection" class="hidden">
+
+      <div class="admin-grid">
+
+        <!-- Branding -->
+        <div class="card">
+          <div class="card-header"><h2>Branding</h2></div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+            <div class="form-group">
+              <label class="form-label">App Title</label>
+              <input type="text" id="appTitle" class="form-control" placeholder="Browser Automation">
+              <span class="form-hint">Shown in the nav bar and browser tab title.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Logo</label>
+              <div class="upload-zone" id="logoZone" onclick="document.getElementById('logoFile').click()">
+                <svg style="width:28px;height:28px;margin:0 auto 8px;display:block;opacity:.4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <p style="font-size:12px;color:var(--text-3);">Click to upload logo image (PNG, SVG, WebP)</p>
+                <input type="file" id="logoFile" accept="image/*">
+                <img id="logoPreview" class="upload-preview" alt="Logo preview">
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+                <span style="font-size:12px;color:var(--text-3);">or URL:</span>
+                <input type="text" id="logoUrl" class="form-control" placeholder="https://… or /assets/uploads/logo.png" style="flex:1;font-size:12px;">
+              </div>
+              <span class="form-hint" style="margin-top:4px;">Uploaded files are served at <code>/assets/uploads/</code>.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="card">
+          <div class="card-header"><h2>Live Preview</h2></div>
+          <div class="card-body">
+            <div style="border:1px solid var(--border-1);border-radius:8px;overflow:hidden;">
+              <div style="padding:12px 16px;background:var(--bg-input);display:flex;align-items:center;gap:10px;">
+                <img id="previewLogo" src="" alt="" style="height:24px;display:none;border-radius:4px;" onerror="this.style.display='none'">
+                <strong id="previewTitle" style="font-size:14px;color:var(--text-1);">Browser Automation</strong>
+              </div>
+              <!-- Ad preview -->
+              <div style="padding:14px;display:flex;flex-direction:column;gap:10px;" id="adPreviewArea">
+                <p style="font-size:12px;color:var(--text-3);text-align:center;">Ad previews appear here as you add them.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Ads management -->
+      <div class="card" style="margin-top:24px;">
+        <div class="card-header">
+          <h2>Ads / Sidebar Content</h2>
+          <button id="addAdBtn" class="btn btn-secondary btn-sm">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Ad
+          </button>
+        </div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text-3);margin-bottom:14px;">Each ad card is shown in the right sidebar on the Extractor page. Images are optional — text-only cards work fine.</p>
+          <div id="adsEditorList"></div>
+        </div>
+      </div>
+
+      <!-- Rate limits -->
+      <div class="card" style="margin-top:24px;">
+        <div class="card-header">
+          <h2>Rate Limits</h2>
+          <span class="badge badge-blue">Applied immediately</span>
+        </div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text-3);margin-bottom:16px;">These limits are enforced on every job submission. Changes take effect on the next request — no restart needed.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Max URLs per job</label>
+              <input type="number" id="rlMaxUrls"    class="form-control" min="1" max="10000" placeholder="500">
+              <span class="form-hint">Hard cap on URLs submitted in a single job.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Max concurrency</label>
+              <input type="number" id="rlMaxConc"    class="form-control" min="1" max="32" placeholder="16">
+              <span class="form-hint">Maximum browsers in the pool regardless of resource check.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Max jobs / hour (per IP)</label>
+              <input type="number" id="rlMaxJobsHr"  class="form-control" min="1" max="10000" placeholder="100">
+              <span class="form-hint">Prevents single IPs from flooding the server.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Max upload size (MB)</label>
+              <input type="number" id="rlMaxUpload"  class="form-control" min="1" max="100" placeholder="10">
+              <span class="form-hint">Maximum size of logo or ad images uploaded via admin.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Scrape timeout (ms)</label>
+              <input type="number" id="rlScrapeMs"   class="form-control" min="1000" max="120000" placeholder="60000">
+              <span class="form-hint">Maximum time to wait for a page to load during scraping.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save -->
+      <div style="display:flex;gap:12px;align-items:center;margin-top:20px;">
+        <button id="saveConfigBtn" class="btn btn-primary" style="min-width:160px;">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+          Save Config
+        </button>
+        <div id="saveStatus" style="font-size:13px;color:var(--text-3);"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast-container" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:9999;"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  let cfg = null;
+  let adCount = 0;
+
+  // ── Load branding for nav ──────────────────────────────────────────────────
+  fetch('/api/config').then(r => r.json()).then(c => {
+    if (c.appTitle) { document.title = 'Admin — ' + c.appTitle; }
+  }).catch(()=>{});
+
+  // ── Load config (admin) ───────────────────────────────────────────────────
+  document.getElementById('loadConfigBtn').addEventListener('click', loadConfig);
+  document.getElementById('adminKey').addEventListener('keydown', e => { if (e.key === 'Enter') loadConfig(); });
+
+  async function loadConfig() {
+    const key = document.getElementById('adminKey').value.trim();
+    if (!key) { document.getElementById('authError').textContent = 'Enter the admin key.'; document.getElementById('authError').classList.remove('hidden'); return; }
+    try {
+      const resp = await fetch('/api/admin/config', { headers: { 'x-admin-key': key } });
+      if (!resp.ok) throw new Error(resp.status === 401 ? 'Invalid admin key.' : 'Server error.');
+      cfg = await resp.json();
+      document.getElementById('authError').classList.add('hidden');
+      populateForm();
+      document.getElementById('configSection').classList.remove('hidden');
+    } catch (err) {
+      document.getElementById('authError').textContent = err.message;
+      document.getElementById('authError').classList.remove('hidden');
+    }
+  }
+
+  function populateForm() {
+    document.getElementById('appTitle').value = cfg.appTitle || '';
+    document.getElementById('logoUrl').value  = cfg.logoUrl  || '';
+    updatePreview();
+
+    // Rate limits
+    const rl = cfg.rateLimits || {};
+    if (rl.maxUrlsPerJob  !== undefined) document.getElementById('rlMaxUrls').value   = rl.maxUrlsPerJob;
+    if (rl.maxConcurrency !== undefined) document.getElementById('rlMaxConc').value    = rl.maxConcurrency;
+    if (rl.maxJobsPerHour !== undefined) document.getElementById('rlMaxJobsHr').value  = rl.maxJobsPerHour;
+    if (rl.maxFileSizeMB  !== undefined) document.getElementById('rlMaxUpload').value  = rl.maxFileSizeMB;
+    if (rl.scrapeTimeoutMs!== undefined) document.getElementById('rlScrapeMs').value   = rl.scrapeTimeoutMs;
+
+    // Render ads
+    document.getElementById('adsEditorList').innerHTML = '';
+    adCount = 0;
+    (cfg.ads || []).forEach(ad => addAdEditor(ad));
+  }
+
+  // ── Live preview ──────────────────────────────────────────────────────────
+  function updatePreview() {
+    const title = document.getElementById('appTitle').value || 'Browser Automation';
+    const logo  = document.getElementById('logoUrl').value;
+    document.getElementById('previewTitle').textContent = title;
+    const pl = document.getElementById('previewLogo');
+    if (logo) { pl.src = logo; pl.style.display = ''; }
+    else { pl.style.display = 'none'; }
+    refreshAdPreview();
+  }
+  document.getElementById('appTitle').addEventListener('input', updatePreview);
+  document.getElementById('logoUrl').addEventListener('input', updatePreview);
+
+  function refreshAdPreview() {
+    const area = document.getElementById('adPreviewArea');
+    const rows  = document.querySelectorAll('.ad-editor');
+    if (!rows.length) { area.innerHTML = '<p style="font-size:12px;color:var(--text-3);text-align:center;">No ads yet.</p>'; return; }
+    area.innerHTML = '';
+    rows.forEach(row => {
+      const title = row.querySelector('.ad-title-input')?.value || '';
+      const desc  = row.querySelector('.ad-desc-input')?.value  || '';
+      const cta   = row.querySelector('.ad-cta-input')?.value   || 'Learn More';
+      const imgSrc= row.querySelector('.ad-img-preview')?.src   || '';
+      const card  = document.createElement('div');
+      card.style.cssText = 'border:1px solid var(--border-1);border-radius:8px;overflow:hidden;font-size:12px;';
+      card.innerHTML = imgSrc && imgSrc !== location.origin + '/'
+        ? `<img src="${imgSrc}" style="width:100%;height:50px;object-fit:cover;">`
+        : `<div style="width:100%;height:40px;background:var(--bg-input);"></div>`;
+      card.innerHTML += `<div style="padding:8px;">
+        <div style="font-weight:700;color:var(--text-1);margin-bottom:2px;">${title || '(title)'}</div>
+        <div style="color:var(--text-3);margin-bottom:6px;">${desc || '(description)'}</div>
+        <span style="color:var(--blue-l);padding:3px 8px;border:1px solid rgba(59,130,246,.35);border-radius:5px;">${cta}</span>
+      </div>`;
+      area.appendChild(card);
+    });
+  }
+
+  // ── Ad editor rows ────────────────────────────────────────────────────────
+  document.getElementById('addAdBtn').addEventListener('click', () => addAdEditor({}));
+
+  function addAdEditor(ad) {
+    const id = ++adCount;
+    const section = document.createElement('div');
+    section.className = 'ad-editor';
+    section.id = `ad-${id}`;
+    section.innerHTML = `
+      <div class="ad-editor-header" onclick="this.nextElementSibling.classList.toggle('collapsed')">
+        <span style="font-size:13px;font-weight:600;color:var(--text-1);">Ad ${id}: <span class="ad-editor-label">${ad.title||'(untitled)'}</span></span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-2);cursor:pointer;" onclick="event.stopPropagation()">
+            <input type="checkbox" class="ad-enabled" ${ad.enabled!==false?'checked':''} style="accent-color:var(--blue);width:14px;height:14px;"> Enabled
+          </label>
+          <button onclick="event.stopPropagation();document.getElementById('ad-${id}').remove();refreshAdPreview();" class="btn btn-secondary btn-sm" style="color:var(--red);padding:3px 8px;">Remove</button>
+        </div>
+      </div>
+      <div class="ad-editor-body" style="display:flex;flex-direction:column;gap:10px;">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input type="text" class="form-control ad-title-input" value="${ad.title||''}" placeholder="Ad headline" oninput="this.closest('.ad-editor').querySelector('.ad-editor-label').textContent=this.value||'(untitled)';refreshAdPreview()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-control ad-desc-input" rows="2" placeholder="Short ad copy" oninput="refreshAdPreview()">${ad.description||''}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Link URL</label>
+          <input type="text" class="form-control ad-link-input" value="${ad.link||''}" placeholder="https://example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">CTA label</label>
+          <input type="text" class="form-control ad-cta-input" value="${ad.cta||'Learn More'}" placeholder="Learn More" oninput="refreshAdPreview()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Image</label>
+          <div class="upload-zone" onclick="document.getElementById('adImg-${id}').click()" style="padding:12px;">
+            <p style="font-size:12px;color:var(--text-3);">Click to upload (PNG, JPG, WebP)</p>
+            <input type="file" id="adImg-${id}" accept="image/*" onchange="previewAdImg(this,'adImgPreview-${id}')">
+            <img id="adImgPreview-${id}" class="upload-preview ad-img-preview" alt="" ${ad.imageUrl?`src="${ad.imageUrl}" style="display:block"`:'style="display:none"'} onerror="this.style.display='none'">
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+            <span style="font-size:12px;color:var(--text-3);">or URL:</span>
+            <input type="text" class="form-control ad-imgurl-input" value="${ad.imageUrl||''}" placeholder="/assets/uploads/ad1.png" style="font-size:12px;flex:1;" oninput="document.getElementById('adImgPreview-${id}').src=this.value;document.getElementById('adImgPreview-${id}').style.display=this.value?'block':'none';refreshAdPreview()">
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('adsEditorList').appendChild(section);
+    // Bind preview update to text fields
+    section.querySelectorAll('input,textarea').forEach(el => el.addEventListener('input', refreshAdPreview));
+    refreshAdPreview();
+  }
+
+  function previewAdImg(input, previewId) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.getElementById(previewId);
+      img.src = e.target.result; img.style.display = 'block';
+      // Store the File object on the element for upload
+      img.dataset.pendingFile = 'true';
+      img._file = file;
+      refreshAdPreview();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ── Logo upload preview ───────────────────────────────────────────────────
+  document.getElementById('logoFile').addEventListener('change', function () {
+    const file = this.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.getElementById('logoPreview');
+      img.src = e.target.result; img.style.display = 'block';
+      img._file = file;
+      document.getElementById('logoUrl').value = '(uploading…)';
+      updatePreview();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ── Save config ───────────────────────────────────────────────────────────
+  document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
+
+  async function saveConfig() {
+    const key = document.getElementById('adminKey').value.trim();
+    const statusEl = document.getElementById('saveStatus');
+    statusEl.textContent = 'Saving…'; statusEl.style.color = 'var(--text-3)';
+
+    // Upload logo if pending
+    const logoPreviewImg = document.getElementById('logoPreview');
+    let logoUrl = document.getElementById('logoUrl').value.trim();
+    if (logoPreviewImg._file) {
+      logoUrl = await uploadFile(logoPreviewImg._file, key, 'logo');
+      logoPreviewImg._file = null;
+    }
+
+    // Build ads array
+    const ads = [];
+    document.querySelectorAll('.ad-editor').forEach(async (row, idx) => {
+      const adImgPreview = row.querySelector('.ad-img-preview');
+      let imageUrl = row.querySelector('.ad-imgurl-input')?.value.trim() || '';
+      if (adImgPreview?._file) {
+        imageUrl = await uploadFile(adImgPreview._file, key, `ad-${idx}`);
+        adImgPreview._file = null;
+      }
+      ads.push({
+        id:          `ad-${idx+1}`,
+        title:       row.querySelector('.ad-title-input')?.value.trim()  || '',
+        description: row.querySelector('.ad-desc-input')?.value.trim()   || '',
+        link:        row.querySelector('.ad-link-input')?.value.trim()   || '',
+        cta:         row.querySelector('.ad-cta-input')?.value.trim()    || 'Learn More',
+        imageUrl:    imageUrl,
+        enabled:     row.querySelector('.ad-enabled')?.checked !== false,
+      });
+    });
+
+    const rlMaxUrls  = parseInt(document.getElementById('rlMaxUrls').value)   || cfg.rateLimits?.maxUrlsPerJob;
+    const rlMaxConc  = parseInt(document.getElementById('rlMaxConc').value)   || cfg.rateLimits?.maxConcurrency;
+    const rlMaxJobs  = parseInt(document.getElementById('rlMaxJobsHr').value) || cfg.rateLimits?.maxJobsPerHour;
+    const rlMaxUpl   = parseInt(document.getElementById('rlMaxUpload').value) || cfg.rateLimits?.maxFileSizeMB;
+    const rlTimeout  = parseInt(document.getElementById('rlScrapeMs').value)  || cfg.rateLimits?.scrapeTimeoutMs;
+
+    const newCfg = {
+      ...cfg,
+      appTitle: document.getElementById('appTitle').value.trim() || cfg.appTitle,
+      logoUrl,
+      ads,
+      rateLimits: {
+        maxUrlsPerJob:    rlMaxUrls,
+        maxConcurrency:   rlMaxConc,
+        maxJobsPerHour:   rlMaxJobs,
+        maxFileSizeMB:    rlMaxUpl,
+        scrapeTimeoutMs:  rlTimeout,
+      },
+    };
+
+    try {
+      const resp = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
+        body: JSON.stringify(newCfg),
+      });
+      if (!resp.ok) throw new Error('Save failed: ' + (await resp.json()).error);
+      cfg = newCfg;
+      statusEl.textContent = 'Saved successfully.'; statusEl.style.color = '#34d399';
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+    } catch (err) {
+      statusEl.textContent = err.message; statusEl.style.color = 'var(--red)';
+    }
+  }
+
+  async function uploadFile(file, key, name) {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('name', name);
+    const resp = await fetch('/api/admin/upload', {
+      method: 'POST',
+      headers: { 'x-admin-key': key },
+      body: fd,
+    });
+    if (!resp.ok) throw new Error('Upload failed');
+    const data = await resp.json();
+    return data.url;
+  }
+
+  // expose for inline oninput
+  window.refreshAdPreview = function () {
+    const area = document.getElementById('adPreviewArea');
+    const rows  = document.querySelectorAll('.ad-editor');
+    if (!rows.length) { area.innerHTML = '<p style="font-size:12px;color:var(--text-3);text-align:center;">No ads yet.</p>'; return; }
+    area.innerHTML = '';
+    rows.forEach(row => {
+      const title = row.querySelector('.ad-title-input')?.value || '';
+      const desc  = row.querySelector('.ad-desc-input')?.value  || '';
+      const cta   = row.querySelector('.ad-cta-input')?.value   || 'Learn More';
+      const imgEl = row.querySelector('.ad-img-preview');
+      const imgSrc= imgEl?.src || '';
+      const card  = document.createElement('div');
+      card.style.cssText = 'border:1px solid var(--border-1);border-radius:8px;overflow:hidden;font-size:12px;';
+      const hasImg = imgSrc && imgSrc !== location.origin + '/';
+      card.innerHTML = `${hasImg ? `<img src="${imgSrc}" style="width:100%;height:50px;object-fit:cover;" onerror="this.style.display='none'">` : '<div style="width:100%;height:30px;background:var(--bg-input);"></div>'}
+        <div style="padding:8px;">
+          <div style="font-weight:700;color:var(--text-1);margin-bottom:2px;">${title||'(title)'}</div>
+          <div style="color:var(--text-3);margin-bottom:6px;font-size:11px;">${desc||'(description)'}</div>
+          <span style="color:var(--blue-l);padding:2px 6px;border:1px solid rgba(59,130,246,.35);border-radius:4px;font-size:11px;">${cta}</span>
+        </div>`;
+      area.appendChild(card);
+    });
+  };
+})();
+</script>
+</main>
+</body>
+</html>
+

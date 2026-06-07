@@ -1,0 +1,48 @@
+{
+  "id": "yelp",
+  "name": "Yelp",
+  "type": "api",
+  "auth": { "type": "bearer", "envKey": "YELP_API_KEY" },
+  "rateLimit": { "delayMs": 600 },
+  "search": {
+    "url": "https://api.yelp.com/v3/businesses/search",
+    "method": "GET",
+    "params": { "term": "{{query}}", "location": "{{location}}", "limit": 50 },
+    "offsetParam": "offset",
+    "pageSize": 50,
+    "startPage": 1,
+    "maxPages": 20,
+    "responsePath": "businesses",
+    "totalPath": "total"
+  },
+  "extract": {
+    "fields": {
+      "name":      "name",
+      "phone":     "phone",
+      "street":    "location.address1",
+      "city":      "location.city",
+      "state":     "location.state",
+      "zip":       "location.zip_code",
+      "country":   "location.country",
+      "website":   "url",
+      "category":  "categories.0.title",
+      "rating":    "rating",
+      "reviews":   "review_count",
+      "sourceUrl": "url"
+    }
+  },
+  "outputMap": {
+    "company.name":            "name",
+    "company.category":        "category",
+    "contact.phone":           "phone",
+    "contact.address.street":  "street",
+    "contact.address.city":    "city",
+    "contact.address.state":   "state",
+    "contact.address.zip":     "zip",
+    "contact.address.country": "country",
+    "contact.website":         "website",
+    "signals.rating":          "rating",
+    "signals.reviewCount":     "reviews",
+    "meta.sourceUrl":          "sourceUrl"
+  }
+}

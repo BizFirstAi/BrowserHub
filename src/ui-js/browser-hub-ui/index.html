@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrowserHub</title>
+<style>
+:root {
+  --bg: #060c1a; --surface: #0e1e38; --border: #0f2040;
+  --text: #e2e8f0; --muted: #4a6080; --blue: #3b82f6;
+  --green: #10b981; --indigo: #6366f1; --purple: #8b5cf6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font: 14px/1.6 'Segoe UI', system-ui, sans-serif; }
+body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+
+.header { text-align: center; margin-bottom: 52px; }
+.logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+.logo-icon {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, #2563eb, #4a9eed);
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-name { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+.tagline { font-size: 13.5px; color: var(--muted); }
+
+.apps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; width: 100%; max-width: 880px; }
+
+.app-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.app-card:hover {
+  border-color: var(--card-color);
+  box-shadow: 0 0 0 1px var(--card-color), 0 8px 32px rgba(0,0,0,0.4);
+  transform: translateY(-2px);
+}
+
+.app-card.validator { --card-color: var(--blue); }
+.app-card.extractor { --card-color: var(--green); }
+.app-card.video     { --card-color: var(--indigo); }
+
+.card-icon {
+  width: 46px; height: 46px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.validator .card-icon { background: rgba(59,130,246,0.13); }
+.extractor .card-icon { background: rgba(16,185,129,0.13); }
+.video     .card-icon { background: rgba(99,102,241,0.13); }
+.platform .card-icon { background: rgba(139,92,246,0.13); }
+.platform .card-icon svg { stroke: var(--purple); }
+
+.card-icon svg { width: 22px; height: 22px; }
+.validator .card-icon svg { stroke: var(--blue); }
+.extractor .card-icon svg { stroke: var(--green); }
+.video     .card-icon svg { stroke: var(--indigo); }
+
+.card-title { font-size: 15px; font-weight: 700; color: #fff; }
+.card-desc  { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+.card-features { display: flex; flex-wrap: wrap; gap: 5px; }
+.feat {
+  font-size: 10px; font-weight: 600; padding: 2px 8px;
+  border-radius: 20px; border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.card-cta {
+  margin-top: auto;
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600; color: var(--card-color);
+}
+.card-cta svg { width: 13px; height: 13px; stroke: var(--card-color); }
+
+.user-bar {
+  position: fixed; top: 20px; right: 24px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px;
+}
+.user-badge {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 5px 14px;
+  font-size: 12px; color: var(--text); font-weight: 500;
+}
+.sign-out {
+  background: none; border: 1px solid var(--border); border-radius: 20px;
+  padding: 5px 14px; font-size: 12px; color: var(--muted);
+  cursor: pointer; transition: border-color 0.15s, color 0.15s; font-family: inherit;
+}
+.sign-out:hover { border-color: #ef4444; color: #ef4444; }
+
+.footer { margin-top: 40px; font-size: 12px; color: var(--muted); display: flex; gap: 20px; }
+.footer a { color: var(--muted); text-decoration: none; }
+.footer a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="user-bar">
+  <span class="user-badge" id="userBadge">...</span>
+  <button class="sign-out" onclick="signOut()">Sign out</button>
+</div>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="#fff" stroke="none"/></svg>
+    </div>
+    <span class="logo-name">Browser Hub</span>
+  </div>
+  <p class="tagline">AI-powered browser automation platform</p>
+</div>
+
+<div class="apps">
+
+  <a class="app-card validator" href="/browser-studio/index.html">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+    </div>
+    <div>
+      <div class="card-title">Web Validator</div>
+      <div class="card-desc">Scan websites for visual quality issues. Apply rules, capture screenshots, and export findings.</div>
+    </div>
+    <div class="card-features">
+      <span class="feat">Page scanning</span>
+      <span class="feat">Rules engine</span>
+      <span class="feat">Screenshots</span>
+      <span class="feat">CSV export</span>
+    </div>
+    <div class="card-cta">
+      Open Validator
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+    </div>
+  </a>
+
+  <a class="app-card extractor" href="/browser-studio/extractor.html">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 3 21 8 8 21H3v-5L16 3"/>
+      </svg>
+    </div>
+    <div>
+      <div class="card-title">Web Extractor</div>
+      <div class="card-desc">Extract structured data and screenshots from any URL. Configurable browser pool with proxy support.</div>
+    </div>
+    <div class="card-features">
+      <span class="feat">Slide capture</span>
+      <span class="feat">Parallel fetch</span>
+      <span class="feat">Proxy pool</span>
+      <span class="feat">DataRecords</span>
+    </div>
+    <div class="card-cta">
+      Open Extractor
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+    </div>
+  </a>
+
+  <a class="app-card video" href="/video-studio/studio.html">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <path d="M8 21h8M12 17v4"/>
+        <polygon points="10,8 16,11 10,14"/>
+      </svg>
+    </div>
+    <div>
+      <div class="card-title">Video Studio</div>
+      <div class="card-desc">Create narrated slide videos with AI voiceover, per-slide audio, and one-click MP4 export.</div>
+    </div>
+    <div class="card-features">
+      <span class="feat">Slide import</span>
+      <span class="feat">Edge TTS</span>
+      <span class="feat">Voice recording</span>
+      <span class="feat">MP4 export</span>
+    </div>
+    <div class="card-cta">
+      Open Studio
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+    </div>
+  </a>
+
+  <a class="app-card platform" href="/platform/index.html">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+    </div>
+    <div>
+      <div class="card-title">Platform Settings</div>
+      <div class="card-desc">Manage users, API keys, webhooks, proxy pools, and system-level observability.</div>
+    </div>
+    <div class="card-features">
+      <span class="feat">Admin</span>
+      <span class="feat">Webhooks</span>
+      <span class="feat">Proxies</span>
+      <span class="feat">Observability</span>
+    </div>
+    <div class="card-cta">
+      Open Platform
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+    </div>
+  </a>
+
+</div>
+
+<div class="footer">
+  <a href="/browser-studio/docs.html">Docs</a>
+  <a href="/browser-studio/admin.html">Admin</a>
+  <a href="/browser-studio/observability.html">Observability</a>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const API = '/api';
+
+  async function init() {
+    const token = localStorage.getItem('studioToken');
+    if (!token) { location.replace('/login.html'); return; }
+    try {
+      const r = await fetch(API + '/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      document.getElementById('userBadge').textContent = d.displayName || d.userId;
+    } catch {
+      location.replace('/login.html');
+    }
+  }
+
+  window.signOut = function () {
+    localStorage.removeItem('studioToken');
+    location.replace('/login.html');
+  };
+
+  init();
+}());
+</script>
+</body>
+</html>
+

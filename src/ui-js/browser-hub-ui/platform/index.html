@@ -1,0 +1,145 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform â€” Browser Hub</title>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/browser-studio/shell.css">
+<script src="/browser-studio/shell.js" defer></script>
+</head>
+<body class="has-sidebar">
+
+<aside class="sidebar">
+  <div class="sb-brand">
+    <a href="/platform/index.html" class="sb-brand-link">
+      <div class="sb-brand-icon" style="background:linear-gradient(135deg,#1e3a5f,#3b82f6)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <div>
+        <div class="sb-brand-name">Platform</div>
+        <div class="sb-brand-sub">BrowserHub</div>
+      </div>
+    </a>
+  </div>
+  <nav class="sb-nav">
+    <a class="sb-item" href="/browser-studio/admin.html">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Admin</span>
+    </a>
+    <a class="sb-item" href="/browser-studio/observability.html">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Observability</span>
+    </a>
+    <a class="sb-item" href="/browser-studio/webhooks.html">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <span>Webhooks</span>
+    </a>
+    <a class="sb-item" href="/browser-studio/proxies.html">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+      <span>Proxies</span>
+    </a>
+    <a class="sb-item" href="/browser-studio/docs.html">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      <span>Docs</span>
+    </a>
+  </nav>
+  <div class="sb-footer">
+    <a class="sb-hub-back" href="/">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12,19 5,12 12,5"/></svg>
+      Browser Hub
+    </a>
+    <div class="sb-user">
+      <div class="sb-user-info">
+        <div class="sb-user-dot"></div>
+        <span class="sb-user-name" id="sbUserName">...</span>
+      </div>
+      <button class="sb-signout" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+</aside>
+
+<main class="main-area">
+<div class="page-wrap">
+  <div class="container">
+
+    <div class="hero">
+      <div class="hero-eyebrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Platform
+      </div>
+      <h1>Platform Settings</h1>
+      <p>Manage users, system configuration, webhooks, proxy pools, and platform-level observability.</p>
+    </div>
+
+    <div class="grid-3" style="gap:18px;">
+
+      <a class="card" href="/browser-studio/admin.html" style="text-decoration:none;color:inherit;transition:border-color 0.18s,box-shadow 0.18s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor=''">
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(59,130,246,0.12);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:3px;">Admin</div>
+            <div style="font-size:12px;color:var(--text-3);line-height:1.5;">Manage users, API keys, and access control.</div>
+          </div>
+        </div>
+      </a>
+
+      <a class="card" href="/browser-studio/observability.html" style="text-decoration:none;color:inherit;transition:border-color 0.18s,box-shadow 0.18s;" onmouseover="this.style.borderColor='#10b981'" onmouseout="this.style.borderColor=''">
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:3px;">Observability</div>
+            <div style="font-size:12px;color:var(--text-3);line-height:1.5;">System metrics, job throughput, and error rates.</div>
+          </div>
+        </div>
+      </a>
+
+      <a class="card" href="/browser-studio/webhooks.html" style="text-decoration:none;color:inherit;transition:border-color 0.18s,box-shadow 0.18s;" onmouseover="this.style.borderColor='#f59e0b'" onmouseout="this.style.borderColor=''">
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:3px;">Webhooks</div>
+            <div style="font-size:12px;color:var(--text-3);line-height:1.5;">Configure outbound webhook endpoints and events.</div>
+          </div>
+        </div>
+      </a>
+
+      <a class="card" href="/browser-studio/proxies.html" style="text-decoration:none;color:inherit;transition:border-color 0.18s,box-shadow 0.18s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor=''">
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:3px;">Proxies</div>
+            <div style="font-size:12px;color:var(--text-3);line-height:1.5;">Manage proxy pool rotation and health checks.</div>
+          </div>
+        </div>
+      </a>
+
+      <a class="card" href="/browser-studio/docs.html" style="text-decoration:none;color:inherit;transition:border-color 0.18s,box-shadow 0.18s;" onmouseover="this.style.borderColor='#64748b'" onmouseout="this.style.borderColor=''">
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(100,116,139,0.12);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:3px;">Docs</div>
+            <div style="font-size:12px;color:var(--text-3);line-height:1.5;">API reference, integration guides, and changelogs.</div>
+          </div>
+        </div>
+      </a>
+
+    </div>
+
+  </div>
+</div>
+<div id="toast-container"></div>
+</main>
+
+</body>
+</html>

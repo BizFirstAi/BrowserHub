@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webhooks — Browser Hub</title>
+<link rel="stylesheet" href="/browser-studio/shell.css">
+<script src="/browser-studio/shell.js" defer></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--s1:#161b26;--s2:#1a2233;--br:#232b3a;--br2:#2d3a50;--tx:#e2e8f0;--muted:#6b7a96;--acc:#4a9eed;--ok:#48bb78;--err:#e05252}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+nav.navbar{height:54px;background:var(--s1);border-bottom:1px solid var(--br);display:flex;align-items:center;padding:0 20px;gap:16px}
+.nav-brand{font-size:16px;font-weight:700;color:#f7fafc;margin-right:8px}
+.nav-link{font-size:13px;color:var(--muted);padding:5px 10px;border-radius:6px;transition:color .12s}
+.nav-link:hover,.nav-link.active{color:var(--tx);background:var(--br)}
+.page{max-width:900px;margin:0 auto;padding:32px 24px}
+h1{font-size:22px;font-weight:700;color:#f7fafc;margin-bottom:4px}
+.subtitle{font-size:14px;color:var(--muted);margin-bottom:28px}
+.card{background:var(--s1);border:1px solid var(--br);border-radius:12px;padding:22px 24px;margin-bottom:20px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:14px}
+input,select,textarea{font:inherit;color:var(--tx);background:var(--s2);border:1px solid var(--br2);border-radius:7px;padding:8px 12px;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;transition:all .12s;white-space:nowrap}
+.btn-primary{background:var(--acc);color:#fff}
+.btn-primary:hover{background:#3182ce}
+.btn-sm{padding:5px 11px;font-size:12px;border-radius:6px;background:var(--s2);border:1px solid var(--br2);color:var(--muted)}
+.btn-sm:hover{border-color:var(--acc);color:var(--acc)}
+.btn-danger{background:#2a1a1a;border:1px solid #5c2a2a;color:var(--err)}
+.events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:4px}
+.event-chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none}
+.event-chip input{width:auto;flex:none}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--br)}
+td{padding:10px;border-bottom:1px solid var(--br);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;font-size:12px;color:var(--muted)}
+.empty{color:var(--muted);font-size:13px;padding:16px 0}
+.spinner{width:13px;height:13px;border:2px solid var(--br2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.test-result{font-size:12px;margin-left:8px}
+.test-result.ok{color:var(--ok)}.test-result.err{color:var(--err)}
+</style>
+</head>
+<body class="has-sidebar">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <a href="/browser-studio/index.html" class="sb-brand-link">
+      <div class="sb-brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="#fff" stroke="none"/></svg>
+      </div>
+      <div>
+        <div class="sb-brand-name">Browser Hub</div>
+        
+      </div>
+    </a>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">
+      <div class="sb-section-label">Web Validator</div>
+      <a class="sb-item" href="/browser-studio/index.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg><span>Dashboard</span></a>
+      <a class="sb-item" href="/browser-studio/scan.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>Live Scan</span></a>
+      <a class="sb-item" href="/browser-studio/results.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Results</span></a>
+      <a class="sb-item" href="/browser-studio/rules.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>Rules</span></a>
+      <a class="sb-item" href="/browser-studio/validator-settings.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Web Extractor</div>
+      <a class="sb-item" href="/browser-studio/extractor.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 8 8 21H3v-5L16 3"/></svg><span>Extractor</span></a>
+      <a class="sb-item" href="/browser-studio/extractor-settings.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Video Studio</div>
+      <a class="sb-item" href="/video-studio/studio.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg><span>Open Studio</span><svg class="sb-ext-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+      <a class="sb-item" href="/browser-studio/video-settings.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Platform</div>
+      <a class="sb-item" href="/browser-studio/admin.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Admin</span></a>
+      <a class="sb-item" href="/browser-studio/observability.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Observability</span></a>
+      <a class="sb-item" href="/browser-studio/webhooks.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span>Webhooks</span></a>
+      <a class="sb-item" href="/browser-studio/proxies.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span>Proxies</span></a>
+      <a class="sb-item" href="/browser-studio/docs.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span>Docs</span></a>
+    </div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-user-info">
+        <div class="sb-user-dot"></div>
+        <span class="sb-user-name" id="sbUserName">...</span>
+      </div>
+      <button class="sb-signout" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+</aside>
+
+<main class="main-area">
+<div class="page">
+  <h1>Webhook Manager</h1>
+  <p class="subtitle">Fire HTTP callbacks to Zapier, Make, or any endpoint when jobs complete or fail.</p>
+
+  <div class="card">
+    <h2>Admin Key</h2>
+    <div style="display:flex;gap:10px">
+      <input type="password" id="adminKey" placeholder="Enter admin key" style="max-width:260px">
+      <button class="btn btn-primary" onclick="saveKey()">Set Key</button>
+    </div>
+  </div>
+
+  <!-- Add webhook -->
+  <div class="card">
+    <h2>Add Webhook</h2>
+    <div class="field"><label>Name</label><input type="text" id="whName" placeholder="My Zapier Hook"></div>
+    <div class="field"><label>Endpoint URL</label><input type="url" id="whUrl" placeholder="https://hooks.zapier.com/..."></div>
+    <div class="field"><label>Secret (optional — HMAC-SHA256 signature header)</label><input type="text" id="whSecret" placeholder="Leave blank to skip signing"></div>
+    <div class="field">
+      <label>Events to subscribe</label>
+      <div class="events-grid" id="eventGrid">Loading…</div>
+    </div>
+    <button class="btn btn-primary" onclick="addWebhook()">Add Webhook</button>
+  </div>
+
+  <!-- List -->
+  <div class="card">
+    <h2>Active Webhooks</h2>
+    <div id="whTable"><div class="empty">Loading…</div></div>
+  </div>
+</div>
+<script>
+const API = '/api/webhooks';
+let _key = localStorage.getItem('adminKey') || '';
+if (_key) document.getElementById('adminKey').value = _key;
+
+function h() { return { 'Content-Type':'application/json', 'x-admin-key':_key }; }
+async function apiFetch(url, opts={}) {
+    const r = await fetch(url, {...opts, headers:{...h(),...(opts.headers||{})}});
+    if (!r.ok) { const d = await r.json().catch(()=>({})); throw new Error(d.error||`HTTP ${r.status}`); }
+    return r.json();
+}
+
+function saveKey() { _key=document.getElementById('adminKey').value.trim(); localStorage.setItem('adminKey',_key); load(); }
+
+async function load() {
+    loadEvents();
+    loadWebhooks();
+}
+
+async function loadEvents() {
+    try {
+        const evts = await apiFetch(`${API}/events`);
+        document.getElementById('eventGrid').innerHTML = evts.map(e => `
+            <label class="event-chip">
+                <input type="checkbox" class="evt-cb" value="${e}"> ${e}
+            </label>`).join('');
+    } catch { document.getElementById('eventGrid').textContent = 'Could not load events'; }
+}
+
+async function loadWebhooks() {
+    const el = document.getElementById('whTable');
+    try {
+        const list = await apiFetch(API);
+        if (!list.length) { el.innerHTML = '<div class="empty">No webhooks yet.</div>'; return; }
+        el.innerHTML = `<table>
+          <thead><tr><th>Name</th><th>URL</th><th>Events</th><th>Actions</th></tr></thead>
+          <tbody>${list.map(w => `
+            <tr>
+              <td style="font-weight:600">${esc(w.name)}</td>
+              <td class="mono">${esc(w.url)}</td>
+              <td style="font-size:11px;color:var(--muted)">${(w.events||[]).join(', ')}</td>
+              <td style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <button class="btn-sm" onclick="testWh('${w.id}',this)">Test</button>
+                <button class="btn-sm" onclick="toggleWh('${w.id}',${w.enabled!==false})">${w.enabled!==false?'Disable':'Enable'}</button>
+                <button class="btn-sm btn-danger" onclick="deleteWh('${w.id}')">Delete</button>
+                <span class="test-result" id="tr-${w.id}"></span>
+              </td>
+            </tr>`).join('')}
+          </tbody></table>`;
+    } catch(err) { el.innerHTML = `<div class="empty" style="color:var(--err)">${err.message}</div>`; }
+}
+
+async function addWebhook() {
+    const name   = document.getElementById('whName').value.trim();
+    const url    = document.getElementById('whUrl').value.trim();
+    const secret = document.getElementById('whSecret').value.trim();
+    const events = [...document.querySelectorAll('.evt-cb:checked')].map(c=>c.value);
+    if (!url)           { alert('URL required'); return; }
+    if (!events.length) { alert('Select at least one event'); return; }
+    try {
+        await apiFetch(API, {method:'POST', body:JSON.stringify({name:name||url, url, secret:secret||undefined, events})});
+        document.getElementById('whName').value='';
+        document.getElementById('whUrl').value='';
+        document.getElementById('whSecret').value='';
+        document.querySelectorAll('.evt-cb').forEach(c=>c.checked=false);
+        loadWebhooks();
+    } catch(err) { alert(err.message); }
+}
+
+async function testWh(id, btn) {
+    const el = document.getElementById(`tr-${id}`);
+    el.className='test-result'; el.innerHTML='<span class="spinner"></span>';
+    try {
+        const r = await apiFetch(`${API}/${id}/test`, {method:'POST'});
+        el.className='test-result ok'; el.textContent=r.success?'Delivered':'Failed: '+(r.error||'');
+    } catch(err) { el.className='test-result err'; el.textContent=err.message; }
+}
+
+async function toggleWh(id, enabled) {
+    await apiFetch(`${API}/${id}`,{method:'PATCH',body:JSON.stringify({enabled:!enabled})});
+    loadWebhooks();
+}
+
+async function deleteWh(id) {
+    if (!confirm('Delete this webhook?')) return;
+    await apiFetch(`${API}/${id}`,{method:'DELETE'});
+    loadWebhooks();
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+if (_key) load(); else loadEvents();
+</script>
+</main>
+</body>
+</html>
+

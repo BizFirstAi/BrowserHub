@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrowserHub Studio</title>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<style>
+/* ── Reset & base ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #0f1117;
+  --surface:    #161b26;
+  --surface2:   #1a2233;
+  --border:     #232b3a;
+  --border2:    #2d3a50;
+  --text:       #e2e8f0;
+  --text-muted: #6b7a96;
+  --accent:     #4a9eed;
+  --accent-dim: #1a3a5c;
+  --danger:     #e05252;
+  --success:    #48bb78;
+  --topbar-h:   54px;
+  --export-h:   88px;
+  --film-w:     220px;
+  --props-w:    280px;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+}
+
+input, textarea, select {
+  font: inherit;
+  color: inherit;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 7px 10px;
+  outline: none;
+  width: 100%;
+}
+
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+
+textarea { resize: vertical; line-height: 1.5; }
+
+/* ── App layout ────────────────────────────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ── Topbar ────────────────────────────────────────────────────────────────── */
+#topbar {
+  height: var(--topbar-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 16px;
+}
+.topbar-logo svg { color: var(--accent); }
+.topbar-logo-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f7fafc;
+}
+
+#projectName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-sep { flex: 1; }
+
+.topbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.topbar-btn:hover { background: var(--border2); color: var(--text); }
+.topbar-btn.accent { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.topbar-btn.accent:hover { background: #1e4a72; }
+.topbar-btn.danger { background: #2a1a1a; border-color: #5c2a2a; color: var(--danger); }
+.topbar-btn.danger:hover { background: #3a1a1a; }
+
+#userBadge {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Main workspace ────────────────────────────────────────────────────────── */
+#workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Panel resize handles ───────────────────────────────────────────────────── */
+.panel-resizer {
+  width: 5px;
+  flex-shrink: 0;
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+  z-index: 10;
+  transition: background 0.15s;
+}
+.panel-resizer:hover, .panel-resizer:active { background: var(--accent); }
+.panel-resizer::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1px;
+  height: 32px;
+  background: var(--border);
+  border-radius: 1px;
+}
+
+/* ── Filmstrip ─────────────────────────────────────────────────────────────── */
+#filmstrip {
+  width: var(--film-w);
+  flex-shrink: 0;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#filmstrip-header {
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#filmstrip-header span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+#filmstrip-add {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 5px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+#filmstrip-add:hover { background: #1e4a72; }
+
+#slide-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#slide-list::-webkit-scrollbar { width: 4px; }
+#slide-list::-webkit-scrollbar-track { background: transparent; }
+#slide-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.slide-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+  position: relative;
+  user-select: none;
+}
+
+.slide-card:hover { border-color: var(--border2); background: #1e2a3a; }
+.slide-card.active { border-color: var(--accent); background: #0e1e30; }
+
+.slide-card-thumb {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #0d141f;
+  border-radius: 5px;
+  margin-bottom: 7px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-card-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.slide-card-thumb .no-img {
+  color: var(--border2);
+}
+
+.slide-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slide-card-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slide-status {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.slide-status.none    { background: var(--border2); }
+.slide-status.audio   { background: #ecc94b; }
+.slide-status.clip    { background: var(--success); }
+
+.slide-drag-handle {
+  position: absolute;
+  top: 6px; right: 6px;
+  color: var(--border2);
+  cursor: grab;
+}
+.slide-drag-handle:hover { color: var(--text-muted); }
+
+/* ── Canvas ────────────────────────────────────────────────────────────────── */
+#canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+#canvas-toolbar {
+  height: 42px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.canvas-tab {
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: background 0.12s, color 0.12s;
+}
+.canvas-tab.active { background: var(--accent-dim); color: var(--accent); }
+.canvas-tab:hover:not(.active) { background: var(--border); color: var(--text); }
+
+#canvas-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Edit mode: image preview */
+#canvas-image-view {
+  width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#canvas-image-view img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.canvas-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+}
+.canvas-empty svg { color: var(--border2); }
+.canvas-empty p { font-size: 14px; }
+
+/* Video mode */
+#canvas-video-view {
+  width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+#canvas-video-view video {
+  max-width: 100%;
+  max-height: 100%;
+  outline: none;
+}
+
+/* ── Properties panel ──────────────────────────────────────────────────────── */
+#props {
+  width: var(--props-w);
+  flex-shrink: 0;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#props-header {
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+#props-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+#props-body::-webkit-scrollbar { width: 4px; }
+#props-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.prop-group {
+  margin-bottom: 18px;
+}
+
+.prop-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.prop-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.prop-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.12s;
+}
+.prop-btn:hover { border-color: var(--accent); color: var(--accent); }
+.prop-btn.success { background: #1a3a28; border-color: #2d6a46; color: var(--success); }
+
+.prop-status {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.prop-voice select {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  padding: 7px 10px;
+  border-radius: 6px;
+  width: 100%;
+  color: var(--text);
+}
+
+/* ── Export bar ────────────────────────────────────────────────────────────── */
+#export-bar {
+  height: var(--export-h);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+#export-bar .exp-info {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+#export-bar .exp-info strong { color: var(--text); display: block; margin-bottom: 2px; }
+
+#export-progress {
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 4px;
+  min-height: 16px;
+}
+
+.exp-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+
+.exp-btn.build {
+  background: var(--accent);
+  color: #fff;
+}
+.exp-btn.build:hover { background: #3182ce; }
+.exp-btn.build:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.exp-btn.download {
+  background: #1a3a28;
+  border: 1px solid #2d6a46;
+  color: var(--success);
+}
+.exp-btn.download:hover { background: #1e4a32; }
+
+.exp-btn.generate {
+  background: #1a2a4a;
+  border: 1px solid var(--border2);
+  color: var(--accent);
+}
+.exp-btn.generate:hover { background: #1e3358; }
+.exp-btn.generate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.exp-btn.play {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text-muted);
+}
+.exp-btn.play:hover { border-color: var(--accent); color: var(--accent); }
+.exp-btn.play:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Import approval list ─────────────────────────────────────────────────── */
+.import-slide-row {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--surface2);
+}
+.import-slide-row input[type="text"] { margin-bottom: 6px; }
+.import-slide-row textarea { resize: vertical; }
+#importApprovalList {
+  max-height: 340px;
+  overflow-y: auto;
+  margin: 12px 0;
+  padding-right: 4px;
+}
+
+/* ── Slide card dropdown menu ──────────────────────────────────────────────── */
+.slide-menu-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.12s;
+  color: #e2e8f0;
+  flex-shrink: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+.slide-card:hover .slide-menu-btn { opacity: 1; }
+.slide-menu-btn:hover { background: rgba(0,0,0,0.75); }
+
+.slide-dropdown {
+  position: fixed;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 4px 0;
+  min-width: 140px;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.slide-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.slide-dropdown-item:hover { background: var(--surface2); }
+.slide-dropdown-item.danger { color: var(--danger); }
+
+/* ── Recording UI ──────────────────────────────────────────────────────────── */
+.rec-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+.rec-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+  animation: recPulse 1s ease-in-out infinite;
+}
+@keyframes recPulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.rec-timer {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: monospace;
+  color: var(--danger);
+  flex: 1;
+}
+.rec-preview audio,
+.rec-preview video {
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: #000;
+}
+
+/* ── Modals ────────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 28px 28px 24px;
+  width: 440px;
+  max-width: 95vw;
+  transform: translateY(10px);
+  transition: transform 0.15s;
+}
+.modal-overlay.open .modal { transform: none; }
+
+.modal h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f7fafc;
+  margin-bottom: 4px;
+}
+
+.modal p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.modal-field { margin-bottom: 14px; }
+.modal-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
+.modal-btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.modal-btn.cancel {
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: 1px solid var(--border2);
+}
+.modal-btn.cancel:hover { color: var(--text); }
+
+.modal-btn.confirm {
+  background: var(--accent);
+  color: #fff;
+}
+.modal-btn.confirm:hover { background: #3182ce; }
+
+.modal-btn.confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.upload-area {
+  border: 2px dashed var(--border2);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.12s;
+  position: relative;
+}
+.upload-area:hover, .upload-area.drag { border-color: var(--accent); }
+.upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.upload-area p { font-size: 13px; color: var(--text-muted); }
+.upload-area .filename { font-size: 12px; color: var(--accent); margin-top: 6px; }
+
+/* ── Spinner ───────────────────────────────────────────────────────────────── */
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Scrollbar global ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── No-project state ──────────────────────────────────────────────────────── */
+#no-project {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: var(--text-muted);
+}
+#no-project svg { color: var(--border2); }
+#no-project h2 { font-size: 18px; font-weight: 700; color: var(--text); }
+#no-project p { font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Topbar ────────────────────────────────────────────────────────────── -->
+  <div id="topbar">
+    <div class="topbar-logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="23 7 16 12 23 17 23 7"/>
+        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+      </svg>
+      <span class="topbar-logo-text">BrowserHub Studio</span>
+    </div>
+
+    <div id="projectName" style="display:none"></div>
+
+    <div class="topbar-sep"></div>
+
+    <button class="topbar-btn" onclick="openNewProjectModal()" title="New project">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Project
+    </button>
+
+    <button class="topbar-btn" onclick="openProjectsModal()" title="Open project">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Projects
+    </button>
+
+    <button class="topbar-btn accent" onclick="openImportPresentationModal()" title="Import slides from an HTML presentation or URL">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Import Slides
+    </button>
+
+    <button class="topbar-btn" id="btnNavHome" onclick="location.href='/'" title="Back to main app">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </button>
+
+    <div id="userBadge">—</div>
+
+    <button class="topbar-btn danger" onclick="signOut()" title="Sign out">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+  </div>
+
+  <!-- ── Workspace ─────────────────────────────────────────────────────────── -->
+  <div id="workspace">
+
+    <!-- Filmstrip -->
+    <div id="filmstrip">
+      <div id="filmstrip-header">
+        <span>Slides</span>
+        <button id="filmstrip-add" onclick="openAddSlideModal()" title="Add slide">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div id="slide-list"></div>
+    </div>
+
+    <!-- Filmstrip resize handle -->
+    <div id="resizer-left" class="panel-resizer panel-resizer-left"></div>
+
+    <!-- Canvas -->
+    <div id="canvas">
+      <div id="canvas-toolbar">
+        <button class="canvas-tab active" id="tabEdit" onclick="switchTab('edit')">Edit</button>
+        <button class="canvas-tab" id="tabVideo" onclick="switchTab('video')">Video</button>
+      </div>
+      <div id="canvas-body">
+        <div id="canvas-edit">
+          <div id="canvas-image-view">
+            <div class="canvas-empty" id="canvas-empty">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <p>Select or add a slide to get started</p>
+            </div>
+            <img id="canvas-img" style="display:none" alt="Slide image">
+          </div>
+        </div>
+        <div id="canvas-video-view" style="display:none">
+          <video id="canvas-video" controls preload="metadata"></video>
+        </div>
+      </div>
+    </div>
+
+    <!-- Props resize handle -->
+    <div id="resizer-right" class="panel-resizer panel-resizer-right"></div>
+
+    <!-- Properties -->
+    <div id="props">
+      <div id="props-header">Properties</div>
+      <div id="props-body">
+        <div id="no-slide-props" style="color:var(--text-muted);font-size:13px;margin-top:20px;">
+          Select a slide to edit its properties.
+        </div>
+        <div id="slide-props" style="display:none">
+          <!-- Title -->
+          <div class="prop-group">
+            <label class="prop-label">Slide Title</label>
+            <input type="text" id="propTitle" placeholder="Title" oninput="debounceSave()">
+          </div>
+          <!-- Script -->
+          <div class="prop-group">
+            <label class="prop-label">Narration Script</label>
+            <textarea id="propScript" rows="6" placeholder="Enter narration text…" oninput="debounceSave()"></textarea>
+          </div>
+          <!-- Voice -->
+          <div class="prop-group prop-voice">
+            <label class="prop-label">Voice</label>
+            <select id="propVoice" onchange="debounceSave()">
+              <option value="en-US-JennyNeural">Jenny (en-US)</option>
+              <option value="en-US-GuyNeural">Guy (en-US)</option>
+              <option value="en-GB-SoniaNeural">Sonia (en-GB)</option>
+              <option value="en-AU-NatashaNeural">Natasha (en-AU)</option>
+              <option value="en-IN-NeerjaNeural">Neerja (en-IN)</option>
+            </select>
+          </div>
+          <!-- Image -->
+          <div class="prop-group">
+            <label class="prop-label">Slide Image</label>
+            <div class="prop-row">
+              <button class="prop-btn" onclick="triggerImageUpload()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Upload
+              </button>
+              <button class="prop-btn" onclick="openImportUrlModal()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                URL
+              </button>
+            </div>
+            <input type="file" id="imageFileInput" accept="image/*" style="display:none" onchange="uploadImage(this)">
+          </div>
+          <!-- Audio -->
+          <div class="prop-group">
+            <label class="prop-label">Audio</label>
+            <!-- Normal controls -->
+            <div class="prop-row" id="audioMainRow">
+              <button class="prop-btn" id="btnGenAudio" onclick="generateAudio()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                Generate
+              </button>
+              <button class="prop-btn" id="btnPlayAudio" onclick="playSlideAudio()" style="display:none">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Play
+              </button>
+              <button class="prop-btn" id="btnRecordVoice" onclick="startVoiceRecording()" title="Record your own voice">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                Record
+              </button>
+            </div>
+            <!-- Recording in progress -->
+            <div id="voiceRecControls" class="rec-controls" style="display:none">
+              <span class="rec-dot"></span>
+              <span id="voiceTimer" class="rec-timer">0:00</span>
+              <button class="prop-btn" onclick="stopVoiceRecording()" style="flex:none;color:var(--danger);border-color:#5c2a2a">Stop</button>
+            </div>
+            <!-- Recorded preview + confirm -->
+            <div id="voiceRecPreview" class="rec-preview" style="display:none">
+              <audio id="voicePreviewAudio" controls></audio>
+              <div class="prop-row">
+                <button class="prop-btn" id="btnUseVoice" onclick="uploadVoiceRecording()">Use This</button>
+                <button class="prop-btn" onclick="discardVoiceRecording()">Discard</button>
+              </div>
+            </div>
+            <div class="prop-status" id="audioStatus"></div>
+          </div>
+
+          <!-- Clip -->
+          <div class="prop-group">
+            <label class="prop-label">Slide Clip</label>
+            <!-- Normal controls -->
+            <div class="prop-row" id="clipMainRow">
+              <button class="prop-btn" id="btnGenClip" onclick="generateClip()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                Encode
+              </button>
+              <button class="prop-btn" id="btnRecordScreen" onclick="startScreenRecording()" title="Record your screen or window">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Screen
+              </button>
+            </div>
+            <!-- Screen recording in progress -->
+            <div id="screenRecControls" class="rec-controls" style="display:none">
+              <span class="rec-dot"></span>
+              <span id="screenTimer" class="rec-timer">0:00</span>
+              <button class="prop-btn" onclick="stopScreenRecording()" style="flex:none;color:var(--danger);border-color:#5c2a2a">Stop</button>
+            </div>
+            <!-- Screen preview + confirm -->
+            <div id="screenRecPreview" class="rec-preview" style="display:none">
+              <video id="screenPreviewVideo" controls style="max-height:120px"></video>
+              <div class="prop-row">
+                <button class="prop-btn" id="btnUseScreen" onclick="uploadScreenRecording()">Use as Clip</button>
+                <button class="prop-btn" onclick="discardScreenRecording()">Discard</button>
+              </div>
+            </div>
+            <div class="prop-status" id="clipStatus"></div>
+          </div>
+          <!-- Delete slide -->
+          <div class="prop-group" style="margin-top:24px; border-top:1px solid var(--border); padding-top:14px;">
+            <button class="prop-btn" onclick="deleteCurrentSlide()" style="color:var(--danger); border-color:#5c2a2a;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              Delete Slide
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /workspace -->
+
+  <!-- ── Export bar ─────────────────────────────────────────────────────────── -->
+  <div id="export-bar">
+    <div class="exp-info">
+      <strong id="exportTitle">No project open</strong>
+      <div id="export-progress"></div>
+    </div>
+    <button class="exp-btn generate" id="btnGenerateAll" onclick="generateAll()" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="10 8 16 12 10 16 10 8"/></svg>
+      Generate All
+    </button>
+    <button class="exp-btn play" id="btnPlayAll" onclick="playAll()" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Play All
+    </button>
+    <button class="exp-btn build" id="btnBuild" onclick="buildVideo()" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      Export Video
+    </button>
+    <button class="exp-btn download" id="btnDownload" style="display:none" onclick="downloadVideo()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download MP4
+    </button>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── Modal: New Project ──────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modalNewProject">
+  <div class="modal">
+    <h2>New Project</h2>
+    <p>Give your project a name to get started.</p>
+    <div class="modal-field">
+      <label>Project Name</label>
+      <input type="text" id="newProjectName" placeholder="My Video Project" maxlength="100">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal('modalNewProject')">Cancel</button>
+      <button class="modal-btn confirm" id="btnCreateProject" onclick="createProject()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Projects list ────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modalProjects">
+  <div class="modal" style="width:500px">
+    <h2>My Projects</h2>
+    <p>Select a project to open, or create a new one.</p>
+    <div id="projectList" style="max-height:320px;overflow-y:auto;margin-bottom:4px;"></div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal('modalProjects')">Close</button>
+      <button class="modal-btn confirm" onclick="closeModal('modalProjects');openNewProjectModal()">New Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Add Slide ────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modalAddSlide">
+  <div class="modal">
+    <h2>Add Slide</h2>
+    <p>Add a new slide to this project.</p>
+    <div class="modal-field">
+      <label>Slide Title</label>
+      <input type="text" id="addSlideTitle" placeholder="Slide title" maxlength="120">
+    </div>
+    <div class="modal-field">
+      <label>Script (optional)</label>
+      <textarea id="addSlideScript" rows="4" placeholder="Narration text…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal('modalAddSlide')">Cancel</button>
+      <button class="modal-btn confirm" onclick="addSlide()">Add Slide</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Import image URL ─────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modalImportUrl">
+  <div class="modal">
+    <h2>Import Image from URL</h2>
+    <p>Enter a direct URL to a PNG, JPG, or WebP image.</p>
+    <div class="modal-field">
+      <label>Image URL</label>
+      <input type="url" id="importUrlInput" placeholder="https://example.com/image.png">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal('modalImportUrl')">Cancel</button>
+      <button class="modal-btn confirm" id="btnImportUrl" onclick="importImageUrl()">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Import slides from HTML presentation ─────────────────────────── -->
+<div class="modal-overlay" id="modalImportPresentation">
+  <div class="modal" style="width:560px;max-height:90vh;overflow-y:auto">
+    <h2>Import Slides from Presentation</h2>
+
+    <!-- Step 1: URL entry + scan -->
+    <div id="importStep1">
+      <p>Enter the URL of an HTML presentation. Narration text is extracted from <code>data-narration</code> attributes. You'll review each slide before import.</p>
+      <div class="modal-field" style="margin-top:14px">
+        <label>Presentation URL or local file path</label>
+        <input type="text" id="importPresentationUrl" placeholder="https://example.com/deck.html  or  C:\path\to\file.html">
+      </div>
+      <div id="importScanStatus" style="margin-top:10px;font-size:13px;min-height:18px;color:var(--text-muted)"></div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeModal('modalImportPresentation')">Cancel</button>
+        <button class="modal-btn confirm" id="btnScan" onclick="scanPresentation()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:5px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Scan Slides
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Approval list + capture -->
+    <div id="importStep2" style="display:none">
+      <p>Review extracted slides. Edit titles and scripts if needed, then click <strong>Import Selected</strong> to capture screenshots and add to the project.</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span id="importSlideCount" style="font-size:12px;color:var(--text-muted)"></span>
+        <button onclick="toggleSelectAll(this)" style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0">Deselect All</button>
+      </div>
+      <div id="importApprovalList"></div>
+      <div id="importCaptureStatus" style="font-size:13px;min-height:18px;color:var(--text-muted);margin-bottom:8px"></div>
+      <div class="modal-actions" style="justify-content:space-between">
+        <button class="modal-btn cancel" id="btnBackToStep1" onclick="goBackToStep1()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <button class="modal-btn confirm" id="btnImportPresentation" onclick="capturePresentation()">Import Selected</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden audio element for slide preview -->
+<audio id="audioPreview" style="display:none"></audio>
+
+<!-- ── Modal: API Keys ──────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modalApiKeys">
+  <div class="modal" style="width:520px">
+    <h2>API Keys</h2>
+    <p>Use an API key to authenticate programmatic requests. Set the <code>X-Api-Key</code> header instead of a Bearer token.</p>
+    <div class="modal-field" style="display:flex;gap:8px;margin-top:14px">
+      <input type="text" id="newKeyName" placeholder="Key name (e.g. My Script)" style="flex:1">
+      <button class="modal-btn confirm" style="margin-top:0;white-space:nowrap" onclick="createApiKey()">Generate</button>
+    </div>
+    <div id="newKeyResult" style="font-size:12px;font-family:monospace;color:var(--accent);margin-top:8px;word-break:break-all;min-height:16px"></div>
+    <div id="apiKeyList" style="margin-top:16px;max-height:240px;overflow-y:auto"></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="modal-btn cancel" onclick="closeModal('modalApiKeys')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let _token      = null;
+let _userId     = null;
+let _project    = null;
+let _slides     = [];
+let _activeSlide = null;
+let _saveTimer  = null;
+let _socket     = null;
+let _tab        = 'edit';
+
+const API = '/api/studio';
+
+// ── Auth ───────────────────────────────────────────────────────────────────────
+async function init() {
+    _token = localStorage.getItem('studioToken');
+    if (!_token) { location.replace('/login.html'); return; }
+    try {
+        const r = await apiFetch('/api/auth/me');
+        _userId = r.userId;
+        document.getElementById('userBadge').textContent = r.displayName || _userId;
+    } catch {
+        location.replace('/login.html');
+        return;
+    }
+    initSocket();
+    initPanelResize();
+    // Auto-open most recent project
+    try {
+        const projects = await apiFetch(`${API}/projects`);
+        if (projects.length) openProject(projects[0]);
+    } catch { /* no projects yet */ }
+}
+
+function signOut() {
+    localStorage.removeItem('studioToken');
+    location.replace('/login.html');
+}
+
+// ── API wrapper ────────────────────────────────────────────────────────────────
+async function apiFetch(url, opts = {}) {
+    const r = await fetch(url, {
+        ...opts,
+        headers: {
+            'Authorization': `Bearer ${_token}`,
+            ...(opts.body && !(opts.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
+            ...(opts.headers || {}),
+        },
+        body: opts.body instanceof FormData ? opts.body
+            : opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d.error || `HTTP ${r.status}`);
+    }
+    return r.json();
+}
+
+// ── Socket.io ─────────────────────────────────────────────────────────────────
+function initSocket() {
+    _socket = io();
+
+    _socket.on('studio-video', evt => {
+        if (!_project || evt.projectId !== _project.id) return;
+        const prog = document.getElementById('export-progress');
+        if (evt.status === 'running') {
+            prog.innerHTML = `<span class="spinner"></span> ${evt.step || ''}`;
+        } else if (evt.status === 'done') {
+            prog.textContent = 'Export complete';
+            document.getElementById('btnBuild').disabled = false;
+            document.getElementById('btnDownload').style.display = '';
+        } else if (evt.status === 'error') {
+            prog.textContent = 'Export failed: ' + evt.error;
+            document.getElementById('btnBuild').disabled = false;
+        }
+    });
+
+    _socket.on('studio-import', evt => {
+        if (!_project || evt.projectId !== _project.id) return;
+        const status = document.getElementById('importCaptureStatus');
+        if (evt.type === 'slide-start') {
+            status.style.color = 'var(--text-muted)';
+            status.innerHTML = `<span class="spinner"></span> Capturing slide ${evt.index + 1}: ${esc(evt.title || '')}`;
+        } else if (evt.type === 'slide-done') {
+            status.textContent = `Captured: ${esc(evt.title || 'slide ' + (evt.index + 1))}`;
+            refreshSlides();
+        } else if (evt.type === 'slide-error') {
+            status.style.color = 'var(--danger)';
+            status.textContent = `Error on slide ${evt.index + 1}: ${evt.error}`;
+        } else if (evt.type === 'done') {
+            status.style.color = 'var(--success)';
+            status.textContent = `Import complete — ${evt.imported} slide${evt.imported !== 1 ? 's' : ''} added.`;
+            document.getElementById('btnImportPresentation').disabled = false;
+            document.getElementById('btnBackToStep1').disabled = false;
+            refreshSlides().then(() => {
+                if (_slides.length && !_activeSlide) selectSlide(_slides[0]);
+            });
+            setTimeout(() => closeModal('modalImportPresentation'), 1800);
+        } else if (evt.type === 'error') {
+            status.style.color = 'var(--danger)';
+            status.textContent = 'Import failed: ' + evt.error;
+            document.getElementById('btnImportPresentation').disabled = false;
+            document.getElementById('btnBackToStep1').disabled = false;
+        }
+    });
+
+    _socket.on('studio-generate', evt => {
+        if (!_project || evt.projectId !== _project.id) return;
+        const prog = document.getElementById('export-progress');
+        const total = _slides.length;
+        if (evt.type === 'slide-start') {
+            prog.innerHTML = `<span class="spinner"></span> Generating slide ${evt.index + 1}${total ? '/' + total : ''}…`;
+        } else if (evt.type === 'slide-done') {
+            refreshSlides();
+        } else if (evt.type === 'slide-error') {
+            prog.textContent = `Error on slide ${evt.index + 1}: ${evt.error}`;
+        } else if (evt.type === 'done') {
+            prog.textContent = 'All clips generated.';
+            document.getElementById('btnGenerateAll').disabled = false;
+            refreshSlides();
+        }
+    });
+}
+
+function joinStudioRoom() {
+    if (_socket && _project) {
+        _socket.emit('join:studio', { userId: _userId, projectId: _project.id });
+    }
+}
+
+// ── Project management ─────────────────────────────────────────────────────────
+function openNewProjectModal() {
+    document.getElementById('newProjectName').value = '';
+    openModal('modalNewProject');
+    setTimeout(() => document.getElementById('newProjectName').focus(), 50);
+}
+
+async function createProject() {
+    const name = document.getElementById('newProjectName').value.trim();
+    if (!name) return;
+    try {
+        document.getElementById('btnCreateProject').disabled = true;
+        const p = await apiFetch(`${API}/projects`, { method: 'POST', body: { name } });
+        closeModal('modalNewProject');
+        openProject(p);
+    } catch (err) {
+        alert(err.message);
+    } finally {
+        document.getElementById('btnCreateProject').disabled = false;
+    }
+}
+
+async function openProjectsModal() {
+    openModal('modalProjects');
+    const list = document.getElementById('projectList');
+    list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Loading…</div>';
+    try {
+        const projects = await apiFetch(`${API}/projects`);
+        if (!projects.length) {
+            list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No projects yet.</div>';
+            return;
+        }
+        list.innerHTML = '';
+        projects.forEach(p => {
+            const el = document.createElement('div');
+            el.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px;cursor:pointer;background:var(--surface2);';
+            el.innerHTML = `
+                <div>
+                    <div style="font-weight:600;font-size:14px;">${esc(p.name)}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">${p.slides.length} slides</div>
+                </div>
+                <button onclick="deleteProjectById('${p.id}', event)" style="background:none;border:none;cursor:pointer;color:var(--danger);padding:4px 8px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+                </button>
+            `;
+            el.querySelector('div').addEventListener('click', () => {
+                closeModal('modalProjects');
+                openProject(p);
+            });
+            list.appendChild(el);
+        });
+    } catch (err) {
+        list.innerHTML = `<div style="color:var(--danger);">${err.message}</div>`;
+    }
+}
+
+async function deleteProjectById(id, evt) {
+    evt.stopPropagation();
+    if (!confirm('Delete this project and all its slides?')) return;
+    await apiFetch(`${API}/projects/${id}`, { method: 'DELETE' });
+    if (_project && _project.id === id) {
+        _project = null; _slides = []; _activeSlide = null;
+        renderFilmstrip(); renderCanvas(); renderProps();
+        document.getElementById('projectName').style.display = 'none';
+        document.getElementById('exportTitle').textContent = 'No project open';
+        document.getElementById('btnBuild').disabled = true;
+        document.getElementById('btnGenerateAll').disabled = true;
+        document.getElementById('btnPlayAll').disabled = true;
+    }
+    openProjectsModal();
+}
+
+async function openProject(project) {
+    _project = project;
+    _activeSlide = null;
+    document.getElementById('projectName').textContent = project.name;
+    document.getElementById('projectName').style.display = '';
+    document.getElementById('exportTitle').textContent = project.name;
+    document.getElementById('btnBuild').disabled = false;
+    document.getElementById('btnGenerateAll').disabled = false;
+    document.getElementById('btnPlayAll').disabled = false;
+    document.getElementById('export-progress').textContent = '';
+    if (project.videoStatus === 'done') {
+        document.getElementById('btnDownload').style.display = '';
+    }
+    joinStudioRoom();
+    await refreshSlides();
+}
+
+// ── Slides ─────────────────────────────────────────────────────────────────────
+async function refreshSlides() {
+    if (!_project) return;
+    try {
+        _slides = await apiFetch(`${API}/projects/${_project.id}/slides`);
+        renderFilmstrip();
+        if (_activeSlide) {
+            const found = _slides.find(s => s.id === _activeSlide.id);
+            if (found) { _activeSlide = found; renderProps(); }
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function openAddSlideModal() {
+    if (!_project) { alert('Open a project first.'); return; }
+    document.getElementById('addSlideTitle').value = '';
+    document.getElementById('addSlideScript').value = '';
+    openModal('modalAddSlide');
+    setTimeout(() => document.getElementById('addSlideTitle').focus(), 50);
+}
+
+async function addSlide() {
+    const title  = document.getElementById('addSlideTitle').value.trim();
+    const script = document.getElementById('addSlideScript').value.trim();
+    if (!title) { document.getElementById('addSlideTitle').focus(); return; }
+    try {
+        await apiFetch(`${API}/projects/${_project.id}/slides`, {
+            method: 'POST', body: { title, script },
+        });
+        closeModal('modalAddSlide');
+        await refreshSlides();
+    } catch (err) { alert(err.message); }
+}
+
+async function deleteCurrentSlide() {
+    if (!_activeSlide || !_project) return;
+    if (!confirm(`Delete slide "${_activeSlide.title}"?`)) return;
+    await apiFetch(`${API}/projects/${_project.id}/slides/${_activeSlide.id}`, { method: 'DELETE' });
+    _activeSlide = null;
+    await refreshSlides();
+    renderCanvas();
+    renderProps();
+}
+
+function selectSlide(slide) {
+    resetRecordingState();
+    _activeSlide = slide;
+    document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('active'));
+    const card = document.querySelector(`.slide-card[data-id="${slide.id}"]`);
+    if (card) card.classList.add('active');
+    renderCanvas();
+    renderProps();
+}
+
+// ── Filmstrip render ───────────────────────────────────────────────────────────
+function renderFilmstrip() {
+    const list = document.getElementById('slide-list');
+    if (!_slides.length) {
+        list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:12px 4px;">No slides yet. Click + to add one.</div>';
+        return;
+    }
+    list.innerHTML = '';
+    _slides.forEach(slide => {
+        const card = document.createElement('div');
+        card.className = 'slide-card' + (_activeSlide && _activeSlide.id === slide.id ? ' active' : '');
+        card.dataset.id = slide.id;
+
+        const hasImg   = !!slide.imagePath;
+        const hasAudio = !!slide.audioPath;
+        const hasClip  = !!slide.clipPath;
+        const statusClass = hasClip ? 'clip' : hasAudio ? 'audio' : 'none';
+
+        card.innerHTML = `
+            <div class="slide-card-thumb">
+                ${hasImg
+                    ? `<img src="${API}/projects/${_project.id}/slides/${slide.id}/image?t=${Date.now()}&token=${encodeURIComponent(_token)}" alt="${esc(slide.title)}" loading="lazy" onerror="this.style.display='none'">`
+                    : `<div class="no-img"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`
+                }
+            </div>
+            <div class="slide-card-title">${esc(slide.title)}</div>
+            <div class="slide-card-meta">
+                <span class="slide-status ${statusClass}"></span>
+                ${slide.audioDuration ? `${slide.audioDuration.toFixed(1)}s` : 'no audio'}
+            </div>
+            <div class="slide-drag-handle">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </div>
+            <button class="slide-menu-btn" data-id="${slide.id}" title="Slide options">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            </button>
+        `;
+        card.addEventListener('click', e => {
+            if (e.target.closest('.slide-menu-btn')) return; // handled by menu
+            selectSlide(slide);
+        });
+        card.querySelector('.slide-menu-btn').addEventListener('click', e => {
+            e.stopPropagation();
+            openSlideMenu(slide, e.currentTarget);
+        });
+        list.appendChild(card);
+    });
+
+    // Drag-to-reorder via SortableJS
+    if (window._sortable) window._sortable.destroy();
+    window._sortable = Sortable.create(list, {
+        animation:   150,
+        handle:      '.slide-drag-handle',
+        ghostClass:  'slide-card',
+        onEnd: async () => {
+            const order = [...list.querySelectorAll('.slide-card')].map(c => c.dataset.id);
+            await apiFetch(`${API}/projects/${_project.id}/slides/reorder`, {
+                method: 'POST', body: { order },
+            });
+            await refreshSlides();
+        },
+    });
+}
+
+// ── Canvas render ──────────────────────────────────────────────────────────────
+function renderCanvas() {
+    if (_tab === 'video') return;
+    const img    = document.getElementById('canvas-img');
+    const empty  = document.getElementById('canvas-empty');
+    if (_activeSlide && _activeSlide.imagePath) {
+        img.src = `${API}/projects/${_project.id}/slides/${_activeSlide.id}/image?t=${Date.now()}&token=${encodeURIComponent(_token)}`;
+        img.style.display = '';
+        empty.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        empty.style.display = '';
+    }
+}
+
+function switchTab(tab) {
+    _tab = tab;
+    document.getElementById('tabEdit').classList.toggle('active', tab === 'edit');
+    document.getElementById('tabVideo').classList.toggle('active', tab === 'video');
+    document.getElementById('canvas-edit').style.display       = tab === 'edit'  ? '' : 'none';
+    document.getElementById('canvas-video-view').style.display = tab === 'video' ? '' : 'none';
+    if (tab !== 'video') renderCanvas();
+    // Video tab: content is loaded on demand by playAll() or loadProjectVideo()
+}
+
+function loadProjectVideo() {
+    if (!_project) return;
+    const v = document.getElementById('canvas-video');
+    v.src   = `${API}/projects/${_project.id}/video?t=${Date.now()}&token=${encodeURIComponent(_token)}`;
+    v.load();
+}
+
+// ── Properties render ──────────────────────────────────────────────────────────
+function renderProps() {
+    const noSlide   = document.getElementById('no-slide-props');
+    const slideProps = document.getElementById('slide-props');
+    if (!_activeSlide) {
+        noSlide.style.display   = '';
+        slideProps.style.display = 'none';
+        return;
+    }
+    noSlide.style.display   = 'none';
+    slideProps.style.display = '';
+
+    document.getElementById('propTitle').value  = _activeSlide.title  || '';
+    document.getElementById('propScript').value = _activeSlide.script || '';
+
+    const voice = _activeSlide.voice || 'en-US-JennyNeural';
+    const sel = document.getElementById('propVoice');
+    if ([...sel.options].some(o => o.value === voice)) sel.value = voice;
+
+    const hasAudio = _activeSlide.audioPath && _activeSlide.audioDuration;
+    document.getElementById('audioStatus').textContent = hasAudio
+        ? `${_activeSlide.audioDuration.toFixed(1)}s`
+        : 'No audio generated';
+    document.getElementById('btnPlayAudio').style.display = hasAudio ? '' : 'none';
+
+    const hasClip = !!_activeSlide.clipPath;
+    document.getElementById('clipStatus').textContent = hasClip ? 'Clip ready' : 'Not encoded';
+}
+
+// ── Auto-save with debounce ────────────────────────────────────────────────────
+function debounceSave() {
+    if (_saveTimer) clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(saveSlideProps, 700);
+}
+
+async function saveSlideProps() {
+    if (!_activeSlide || !_project) return;
+    const patch = {
+        title:  document.getElementById('propTitle').value.trim(),
+        script: document.getElementById('propScript').value,
+        voice:  document.getElementById('propVoice').value,
+    };
+    try {
+        const updated = await apiFetch(
+            `${API}/projects/${_project.id}/slides/${_activeSlide.id}`,
+            { method: 'PATCH', body: patch }
+        );
+        _activeSlide = updated;
+        // Update filmstrip card title without full re-render
+        const card = document.querySelector(`.slide-card[data-id="${updated.id}"] .slide-card-title`);
+        if (card) card.textContent = updated.title;
+    } catch (err) {
+        console.error('Save failed:', err.message);
+    }
+}
+
+// ── Image upload ───────────────────────────────────────────────────────────────
+function triggerImageUpload() { document.getElementById('imageFileInput').click(); }
+
+async function uploadImage(input) {
+    if (!input.files.length || !_activeSlide) return;
+    const fd = new FormData();
+    fd.append('image', input.files[0]);
+    try {
+        await fetch(`${API}/projects/${_project.id}/slides/${_activeSlide.id}/image`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${_token}` },
+            body: fd,
+        });
+        input.value = '';
+        await refreshSlides();
+        const slide = _slides.find(s => s.id === _activeSlide.id);
+        if (slide) { _activeSlide = slide; renderCanvas(); }
+    } catch (err) { alert('Upload failed: ' + err.message); }
+}
+
+function openImportUrlModal() {
+    document.getElementById('importUrlInput').value = '';
+    openModal('modalImportUrl');
+}
+
+async function importImageUrl() {
+    const url = document.getElementById('importUrlInput').value.trim();
+    if (!url) return;
+    try {
+        document.getElementById('btnImportUrl').disabled = true;
+        await apiFetch(`${API}/projects/${_project.id}/slides/${_activeSlide.id}/image-url`, {
+            method: 'POST', body: { url },
+        });
+        closeModal('modalImportUrl');
+        await refreshSlides();
+        const slide = _slides.find(s => s.id === _activeSlide.id);
+        if (slide) { _activeSlide = slide; renderCanvas(); renderProps(); }
+    } catch (err) {
+        alert('Import failed: ' + err.message);
+    } finally {
+        document.getElementById('btnImportUrl').disabled = false;
+    }
+}
+
+// ── Audio generation ───────────────────────────────────────────────────────────
+async function generateAudio() {
+    if (!_activeSlide || !_project) return;
+    const script = document.getElementById('propScript').value.trim();
+    if (!script) { alert('Enter a narration script before generating audio.'); return; }
+    // Save first so server has latest script
+    await saveSlideProps();
+    const btn = document.getElementById('btnGenAudio');
+    btn.disabled = true;
+    document.getElementById('audioStatus').innerHTML = '<span class="spinner"></span> Generating…';
+    try {
+        const voice = document.getElementById('propVoice').value;
+        const result = await apiFetch(
+            `${API}/projects/${_project.id}/slides/${_activeSlide.id}/audio`,
+            { method: 'POST', body: { voice } }
+        );
+        document.getElementById('audioStatus').textContent = `${result.duration.toFixed(1)}s`;
+        await refreshSlides();
+        const slide = _slides.find(s => s.id === _activeSlide.id);
+        if (slide) { _activeSlide = slide; renderProps(); }
+    } catch (err) {
+        document.getElementById('audioStatus').textContent = 'Error: ' + err.message;
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function playSlideAudio() {
+    if (!_activeSlide || !_project) return;
+    const audio = document.getElementById('audioPreview');
+    audio.src = `${API}/projects/${_project.id}/slides/${_activeSlide.id}/audio?t=${Date.now()}&token=${encodeURIComponent(_token)}`;
+    audio.play();
+}
+
+// ── Clip generation ────────────────────────────────────────────────────────────
+async function generateClip() {
+    if (!_activeSlide || !_project) return;
+    const btn = document.getElementById('btnGenClip');
+    btn.disabled = true;
+    document.getElementById('clipStatus').innerHTML = '<span class="spinner"></span> Encoding…';
+    try {
+        await apiFetch(
+            `${API}/projects/${_project.id}/slides/${_activeSlide.id}/clip`,
+            { method: 'POST' }
+        );
+        document.getElementById('clipStatus').textContent = 'Clip ready';
+        await refreshSlides();
+        const slide = _slides.find(s => s.id === _activeSlide.id);
+        if (slide) { _activeSlide = slide; renderProps(); }
+    } catch (err) {
+        document.getElementById('clipStatus').textContent = 'Error: ' + err.message;
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// ── Generate All Clips ────────────────────────────────────────────────────────
+async function generateAll() {
+    if (!_project) return;
+    document.getElementById('btnGenerateAll').disabled = true;
+    document.getElementById('export-progress').innerHTML = '<span class="spinner"></span> Queuing clip generation…';
+    try {
+        const voice = _activeSlide ? document.getElementById('propVoice').value : 'en-US-JennyNeural';
+        await apiFetch(`${API}/projects/${_project.id}/generate-all`, { method: 'POST', body: { voice } });
+        // Progress updates come via socket studio-generate events
+    } catch (err) {
+        document.getElementById('export-progress').textContent = 'Error: ' + err.message;
+        document.getElementById('btnGenerateAll').disabled = false;
+    }
+}
+
+// ── Play All ──────────────────────────────────────────────────────────────────
+let _playAllSlides = [];
+let _playAllIndex  = 0;
+
+function playAll() {
+    if (!_project) return;
+    const clippedSlides = _slides.filter(s => s.clipPath);
+    if (!clippedSlides.length) {
+        alert('No encoded clips found. Use "Generate All" first, or encode individual clips from the Slide Properties panel.');
+        return;
+    }
+    _playAllSlides = clippedSlides;
+    _playAllIndex  = 0;
+    switchTab('video');
+    playNextClip();
+}
+
+function playNextClip() {
+    if (_playAllIndex >= _playAllSlides.length) {
+        document.getElementById('export-progress').textContent = 'Playback complete.';
+        return;
+    }
+    const slide = _playAllSlides[_playAllIndex];
+    // Highlight filmstrip
+    document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('active'));
+    const card = document.querySelector(`.slide-card[data-id="${slide.id}"]`);
+    if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    document.getElementById('export-progress').textContent =
+        `Playing ${_playAllIndex + 1} / ${_playAllSlides.length}: ${slide.title}`;
+    const v = document.getElementById('canvas-video');
+    v.onended = null;
+    v.src = `${API}/projects/${_project.id}/slides/${slide.id}/clip?t=${Date.now()}&token=${encodeURIComponent(_token)}`;
+    v.onended = () => { _playAllIndex++; playNextClip(); };
+    v.load();
+    v.play().catch(() => {});
+}
+
+// ── Video build / export ───────────────────────────────────────────────────────
+async function buildVideo() {
+    if (!_project) return;
+    if (!confirm(`Export merged video for "${_project.name}"?\n\nThis concatenates all slide clips and burns subtitles.`)) return;
+    document.getElementById('btnBuild').disabled = true;
+    document.getElementById('btnDownload').style.display = 'none';
+    document.getElementById('export-progress').innerHTML = '<span class="spinner"></span> Starting export…';
+    try {
+        const voice = _activeSlide ? document.getElementById('propVoice').value : 'en-US-JennyNeural';
+        await apiFetch(`${API}/projects/${_project.id}/video`, {
+            method: 'POST', body: { voice },
+        });
+    } catch (err) {
+        document.getElementById('export-progress').textContent = 'Error: ' + err.message;
+        document.getElementById('btnBuild').disabled = false;
+    }
+}
+
+function downloadVideo() {
+    if (!_project) return;
+    const a = document.createElement('a');
+    a.href     = `${API}/projects/${_project.id}/video?t=${Date.now()}&token=${encodeURIComponent(_token)}`;
+    a.download = `${_project.name.replace(/[^a-z0-9]/gi, '_')}.mp4`;
+    a.click();
+}
+
+// ── Modal helpers ──────────────────────────────────────────────────────────────
+function openModal(id) {
+    document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.classList.remove('open');
+    });
+});
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+// ── Utilities ──────────────────────────────────────────────────────────────────
+function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Import presentation — 2-step (scan → approve → capture) ───────────────────
+let _scannedSlides = [];
+let _scannedUrl    = '';
+let _allSelected   = true;
+
+function openImportPresentationModal() {
+    if (!_project) { alert('Open or create a project first.'); return; }
+    // Restore last-used URL from localStorage
+    const saved = localStorage.getItem('importLastUrl') || '';
+    document.getElementById('importPresentationUrl').value = saved;
+    document.getElementById('importScanStatus').textContent = '';
+    document.getElementById('importScanStatus').style.color = 'var(--text-muted)';
+    document.getElementById('btnScan').disabled = false;
+    document.getElementById('importStep1').style.display = '';
+    document.getElementById('importStep2').style.display = 'none';
+    _scannedSlides = [];
+    _scannedUrl = '';
+    _allSelected = true;
+    openModal('modalImportPresentation');
+    setTimeout(() => document.getElementById('importPresentationUrl').focus(), 50);
+}
+
+async function scanPresentation() {
+    const url = document.getElementById('importPresentationUrl').value.trim();
+    if (!url) { document.getElementById('importPresentationUrl').focus(); return; }
+    localStorage.setItem('importLastUrl', url);
+    const btn    = document.getElementById('btnScan');
+    const status = document.getElementById('importScanStatus');
+    btn.disabled = true;
+    status.style.color = 'var(--text-muted)';
+    status.innerHTML = '<span class="spinner"></span> Scanning slides…';
+    try {
+        const result = await apiFetch(
+            `${API}/projects/${_project.id}/import-url/scan`,
+            { method: 'POST', body: { url } }
+        );
+        _scannedSlides = result.slides || [];
+        _scannedUrl    = url;
+        if (!_scannedSlides.length) {
+            status.style.color = 'var(--danger)';
+            status.textContent = 'No slides found in this presentation.';
+            btn.disabled = false;
+            return;
+        }
+        // Transition to step 2
+        document.getElementById('importSlideCount').textContent =
+            `${_scannedSlides.length} slide${_scannedSlides.length !== 1 ? 's' : ''} found`;
+        renderApprovalList();
+        document.getElementById('importCaptureStatus').textContent = '';
+        document.getElementById('importCaptureStatus').style.color = 'var(--text-muted)';
+        document.getElementById('btnImportPresentation').disabled = false;
+        document.getElementById('btnBackToStep1').disabled = false;
+        document.getElementById('importStep1').style.display = 'none';
+        document.getElementById('importStep2').style.display = '';
+    } catch (err) {
+        status.style.color = 'var(--danger)';
+        status.textContent = 'Scan failed: ' + err.message;
+        btn.disabled = false;
+    }
+}
+
+function renderApprovalList() {
+    const list = document.getElementById('importApprovalList');
+    list.innerHTML = _scannedSlides.map((s, i) => `
+        <div class="import-slide-row">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+                <input type="checkbox" class="import-cb" data-index="${i}" checked
+                    style="margin-top:4px;width:auto;flex:none;accent-color:var(--accent)">
+                <div style="flex:1;min-width:0">
+                    <input type="text" class="import-title" data-index="${i}"
+                        value="${esc(s.title)}" placeholder="Slide title"
+                        style="margin-bottom:6px;font-size:13px;font-weight:600">
+                    <textarea class="import-script" data-index="${i}" rows="2"
+                        placeholder="Narration text…"
+                        style="font-size:12px;line-height:1.4">${esc(s.script || '')}</textarea>
+                </div>
+            </div>
+        </div>`).join('');
+}
+
+function goBackToStep1() {
+    document.getElementById('importStep1').style.display = '';
+    document.getElementById('importStep2').style.display = 'none';
+    document.getElementById('btnScan').disabled = false;
+    document.getElementById('importScanStatus').textContent = '';
+}
+
+function toggleSelectAll(btn) {
+    _allSelected = !_allSelected;
+    document.querySelectorAll('.import-cb').forEach(cb => cb.checked = _allSelected);
+    btn.textContent = _allSelected ? 'Deselect All' : 'Select All';
+}
+
+async function capturePresentation() {
+    const approved = [];
+    document.querySelectorAll('.import-cb:checked').forEach(cb => {
+        const i      = parseInt(cb.dataset.index, 10);
+        const title  = document.querySelector(`.import-title[data-index="${i}"]`).value.trim()
+                       || _scannedSlides[i].title;
+        const script = document.querySelector(`.import-script[data-index="${i}"]`).value;
+        approved.push({ index: _scannedSlides[i].index, title, script });
+    });
+    if (!approved.length) { alert('Select at least one slide to import.'); return; }
+
+    const btn    = document.getElementById('btnImportPresentation');
+    const back   = document.getElementById('btnBackToStep1');
+    const status = document.getElementById('importCaptureStatus');
+    btn.disabled  = true;
+    back.disabled = true;
+    status.style.color = 'var(--text-muted)';
+    status.innerHTML = `<span class="spinner"></span> Starting capture of ${approved.length} slide${approved.length !== 1 ? 's' : ''}…`;
+
+    try {
+        await apiFetch(
+            `${API}/projects/${_project.id}/import-url/capture`,
+            { method: 'POST', body: { url: _scannedUrl, approved } }
+        );
+        // Progress arrives via socket 'studio-import' events handled in initSocket()
+    } catch (err) {
+        status.style.color = 'var(--danger)';
+        status.textContent = 'Capture failed: ' + err.message;
+        btn.disabled  = false;
+        back.disabled = false;
+    }
+}
+
+// ── Slide card dropdown menu ───────────────────────────────────────────────────
+let _slideDropdown = null;
+
+function openSlideMenu(slide, btn) {
+    closeSlideMenu();
+    const rect = btn.getBoundingClientRect();
+    const menu = document.createElement('div');
+    menu.className = 'slide-dropdown';
+    menu.style.top  = `${rect.bottom + 4}px`;
+    menu.style.left = `${Math.min(rect.left, window.innerWidth - 160)}px`;
+    menu.innerHTML = `
+        <div class="slide-dropdown-item" id="smi-dup">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Duplicate
+        </div>
+        <div class="slide-dropdown-item" id="smi-del" style="border-top:1px solid var(--border);margin-top:2px;padding-top:8px" class="danger">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Delete
+        </div>`;
+    menu.querySelector('#smi-dup').addEventListener('click', () => { closeSlideMenu(); duplicateSlide(slide); });
+    menu.querySelector('#smi-del').addEventListener('click', () => { closeSlideMenu(); deleteSlideById(slide); });
+    menu.querySelector('#smi-del').style.color = 'var(--danger)';
+    document.body.appendChild(menu);
+    _slideDropdown = menu;
+    setTimeout(() => document.addEventListener('click', closeSlideMenu, { once: true }), 0);
+}
+
+function closeSlideMenu() {
+    if (_slideDropdown) { _slideDropdown.remove(); _slideDropdown = null; }
+}
+
+async function duplicateSlide(slide) {
+    if (!_project) return;
+    try {
+        const newSlide = await apiFetch(`${API}/projects/${_project.id}/slides`, {
+            method: 'POST',
+            body: { title: slide.title + ' (copy)', script: slide.script || '', voice: slide.voice },
+        });
+        // Copy image if present
+        if (slide.imagePath) {
+            await apiFetch(
+                `${API}/projects/${_project.id}/slides/${newSlide.id}/image-url`,
+                { method: 'POST', body: { url: `${window.location.origin}${API}/projects/${_project.id}/slides/${slide.id}/image?token=${encodeURIComponent(_token)}` } }
+            ).catch(() => {});
+        }
+        await refreshSlides();
+    } catch (err) { alert('Duplicate failed: ' + err.message); }
+}
+
+async function deleteSlideById(slide) {
+    if (!confirm(`Delete slide "${slide.title}"?`)) return;
+    await apiFetch(`${API}/projects/${_project.id}/slides/${slide.id}`, { method: 'DELETE' });
+    if (_activeSlide && _activeSlide.id === slide.id) {
+        _activeSlide = null; renderCanvas(); renderProps();
+    }
+    await refreshSlides();
+}
+
+// ── Panel resize handles ───────────────────────────────────────────────────────
+const PANEL_SIZES_KEY = 'studio_panel_sizes';
+
+function initPanelResize() {
+    const saved = (() => { try { return JSON.parse(localStorage.getItem(PANEL_SIZES_KEY)) || {}; } catch { return {}; } })();
+    const filmstrip = document.getElementById('filmstrip');
+    const props     = document.getElementById('props');
+
+    if (saved.filmW) filmstrip.style.width = saved.filmW;
+    if (saved.propsW) props.style.width    = saved.propsW;
+
+    makeDragger('resizer-left',  filmstrip, 'width',  160, 380, w => {
+        filmstrip.style.width = w + 'px';
+        savePanelSizes();
+    });
+    makeDragger('resizer-right', props, 'width', 200, 480, w => {
+        props.style.width = w + 'px';
+        savePanelSizes();
+    });
+}
+
+function makeDragger(resizerId, panel, dimension, min, max, onResize) {
+    const handle = document.getElementById(resizerId);
+    if (!handle) return;
+    let startX, startSize;
+    const isLeft = resizerId === 'resizer-left';
+
+    handle.addEventListener('mousedown', e => {
+        e.preventDefault();
+        startX    = e.clientX;
+        startSize = panel.getBoundingClientRect()[dimension];
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        function onMove(ev) {
+            const delta = isLeft ? (ev.clientX - startX) : (startX - ev.clientX);
+            const newSize = Math.min(max, Math.max(min, startSize + delta));
+            onResize(newSize);
+        }
+        function onUp() {
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    });
+}
+
+function savePanelSizes() {
+    const filmstrip = document.getElementById('filmstrip');
+    const props     = document.getElementById('props');
+    localStorage.setItem(PANEL_SIZES_KEY, JSON.stringify({
+        filmW:  filmstrip.style.width,
+        propsW: props.style.width,
+    }));
+}
+
+// ── Voice recording ────────────────────────────────────────────────────────────
+let _voiceStream   = null;
+let _voiceRecorder = null;
+let _voiceChunks   = [];
+let _voiceTimer    = null;
+let _voiceBlob     = null;
+let _voiceSecs     = 0;
+
+async function startVoiceRecording() {
+    if (!_activeSlide || !_project) return;
+    try {
+        _voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch (err) {
+        alert('Microphone access required: ' + err.message);
+        return;
+    }
+    _voiceChunks = [];
+    _voiceBlob   = null;
+    _voiceSecs   = 0;
+
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus' : 'audio/webm';
+    _voiceRecorder = new MediaRecorder(_voiceStream, { mimeType });
+    _voiceRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) _voiceChunks.push(e.data); };
+    _voiceRecorder.onstop = () => {
+        _voiceBlob = new Blob(_voiceChunks, { type: mimeType });
+        document.getElementById('voicePreviewAudio').src = URL.createObjectURL(_voiceBlob);
+        document.getElementById('voiceRecControls').style.display = 'none';
+        document.getElementById('voiceRecPreview').style.display = '';
+    };
+    _voiceRecorder.start(250);
+
+    document.getElementById('audioMainRow').style.display = 'none';
+    document.getElementById('voiceRecControls').style.display = '';
+    _voiceTimer = setInterval(() => {
+        _voiceSecs++;
+        const m = Math.floor(_voiceSecs / 60), s = _voiceSecs % 60;
+        document.getElementById('voiceTimer').textContent = `${m}:${String(s).padStart(2, '0')}`;
+    }, 1000);
+}
+
+function stopVoiceRecording() {
+    if (_voiceTimer) { clearInterval(_voiceTimer); _voiceTimer = null; }
+    if (_voiceStream) { _voiceStream.getTracks().forEach(t => t.stop()); _voiceStream = null; }
+    if (_voiceRecorder && _voiceRecorder.state !== 'inactive') _voiceRecorder.stop();
+}
+
+async function uploadVoiceRecording() {
+    if (!_voiceBlob || !_activeSlide || !_project) return;
+    const btn = document.getElementById('btnUseVoice');
+    btn.disabled = true;
+    document.getElementById('audioStatus').innerHTML = '<span class="spinner"></span> Uploading and converting…';
+    const fd = new FormData();
+    fd.append('audio', _voiceBlob, 'recording.webm');
+    try {
+        const r = await fetch(
+            `${API}/projects/${_project.id}/slides/${_activeSlide.id}/audio/record`,
+            { method: 'POST', headers: { Authorization: `Bearer ${_token}` }, body: fd }
+        );
+        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || `HTTP ${r.status}`); }
+        discardVoiceRecording();
+        await refreshSlides();
+        const slide = _slides.find(s => s.id === _activeSlide.id);
+        if (slide) { _activeSlide = slide; renderProps(); }
+    } catch (err) {
+        document.getElementById('audioStatus').textContent = 'Upload failed: ' + err.message;
+        btn.disabled = false;
+    }
+}
+
+function discardVoiceRecording() {
+    const el = document.getElementById('voicePreviewAudio');
+    if (el.src) { URL.revokeObjectURL(el.src); el.src = ''; }
+    _voiceBlob = null; _voiceChunks = [];
+    document.getElementById('voiceRecPreview').style.display   = 'none';
+    document.getElementById('voiceRecControls').style.display  = 'none';
+    document.getElementById('audioMainRow').style.display      = '';
+}
+
+// ── Screen recording ───────────────────────────────────────────────────────────
+let _screenStream   = null;
+let _screenRecorder = null;
+let _screenChunks   = [];
+let _screenTimer    = null;
+let _screenBlob     = null;
+let _screenSecs     = 0;
+
+async function startScreenRecording() {
+    if (!_activeSlide || !_project) return;
+    try {
+        _screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: { frameRate: 30 },
+            audio: { echoCancellation: false, noiseSuppression: false },
+        });
+    } catch (err) {
+        if (err.name !== 'NotAllowedError') alert('Screen capture failed: ' + err.message);
+        return;
+    }
+    _screenChunks = [];
+    _screenBlob   = null;
+    _screenSecs   = 0;
+
+    // When user clicks "Stop sharing" in the browser UI, stop recording too
+    _screenStream.getVideoTracks()[0].addEventListener('ended', stopScreenRecording);
+
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9'
+        : MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+        ? 'video/webm;codecs=vp8'
+        : 'video/webm';
+    _screenRecorder = new MediaRecorder(_screenStream, { mimeType });
+    _screenRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) _screenChunks.push(e.data); };
+    _screenRecorder.onstop = () => {
+        _screenBlob = new Blob(_screenChunks, { type: mimeType });
+        document.getElementById('screenPreviewVideo').src = URL.createObjectURL(_screenBlob);
+        document.getElementById('screenRecControls').style.display = 'none';
+        document.getElementById('screenRecPreview').style.display  = '';
+    };
+    _screenRecorder.start(250);
+
+    document.getElementById('clipMainRow').style.display       = 'none';
+    document.getElementById('screenRecControls').style.display = '';
+    _screenTimer = setInterval(() => {
+        _screenSecs++;
+        const m = Math.floor(_screenSecs / 60), s = _screenSecs % 60;
+        document.getElementById('screenTimer').textContent = `${m}:${String(s).padStart(2, '0')}`;
+    }, 1000);
+}
+
+function stopScreenRecording() {
+    if (_screenTimer) { clearInterval(_screenTimer); _screenTimer = null; }
+    if (_screenStream) { _screenStream.getTracks().forEach(t => t.stop()); _screenStream = null; }
+    if (_screenRecorder && _screenRecorder.state !== 'inactive') _screenRecorder.stop();
+}
+
+async function uploadScreenRecording() {
+    if (!_screenBlob || !_activeSlide || !_project) return;
+    const btn = document.getElementById('btnUseScreen');
+    btn.disabled = true;
+    document.getElementById('clipStatus').innerHTML = '<span class="spinner"></span> Uploading and converting to MP4…';
+    const fd = new FormData();
+    fd.append('clip', _screenBlob, 'screen.webm');
+    try {
+        const r = await fetch(
+            `${API}/projects/${_project.id}/slides/${_activeSlide.id}/clip/record`,
+            { method: 'POST', headers: { Authorization: `Bearer ${_token}` }, body: fd }
+        );
+        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || `HTTP ${r.status}`); }
+        discardScreenRecording();
+        await refreshSlides();
+        const slide = _slides.find(s => s.id === _activeSlide.id);
+        if (slide) { _activeSlide = slide; renderProps(); }
+        document.getElementById('clipStatus').textContent = 'Clip ready';
+    } catch (err) {
+        document.getElementById('clipStatus').textContent = 'Upload failed: ' + err.message;
+        btn.disabled = false;
+    }
+}
+
+function discardScreenRecording() {
+    const el = document.getElementById('screenPreviewVideo');
+    if (el.src) { URL.revokeObjectURL(el.src); el.src = ''; }
+    _screenBlob = null; _screenChunks = [];
+    document.getElementById('screenRecPreview').style.display  = 'none';
+    document.getElementById('screenRecControls').style.display = 'none';
+    document.getElementById('clipMainRow').style.display       = '';
+}
+
+function resetRecordingState() {
+    if (_voiceRecorder  && _voiceRecorder.state  !== 'inactive') stopVoiceRecording();
+    if (_screenRecorder && _screenRecorder.state !== 'inactive') stopScreenRecording();
+    discardVoiceRecording();
+    discardScreenRecording();
+}
+
+// ── API Key management ─────────────────────────────────────────────────────────
+async function openApiKeysModal() {
+    openModal('modalApiKeys');
+    document.getElementById('newKeyResult').textContent = '';
+    await loadApiKeys();
+}
+
+async function loadApiKeys() {
+    const el = document.getElementById('apiKeyList');
+    try {
+        const keys = await apiFetch('/api/auth/api-keys');
+        if (!keys.length) {
+            el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No API keys yet.</div>';
+            return;
+        }
+        el.innerHTML = keys.map(k => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:7px;margin-bottom:6px;background:var(--surface2)">
+                <div>
+                    <div style="font-weight:600;font-size:13px">${esc(k.name)}</div>
+                    <div style="font-size:11px;color:var(--text-muted);font-family:monospace">${esc(k.keyPreview)}</div>
+                </div>
+                <button onclick="revokeApiKey('${k.id}')" style="font-size:12px;color:var(--danger);background:none;border:none;cursor:pointer;padding:4px 8px">Revoke</button>
+            </div>`).join('');
+    } catch (err) {
+        el.innerHTML = `<div style="color:var(--danger);font-size:13px">${err.message}</div>`;
+    }
+}
+
+async function createApiKey() {
+    const name = document.getElementById('newKeyName').value.trim() || 'API Key';
+    try {
+        const entry = await apiFetch('/api/auth/api-keys', { method: 'POST', body: { name } });
+        document.getElementById('newKeyResult').innerHTML =
+            `Key created — copy now, it will not be shown again:<br><strong>${esc(entry.key)}</strong>`;
+        document.getElementById('newKeyName').value = '';
+        await loadApiKeys();
+    } catch (err) {
+        document.getElementById('newKeyResult').style.color = 'var(--danger)';
+        document.getElementById('newKeyResult').textContent = err.message;
+    }
+}
+
+async function revokeApiKey(keyId) {
+    if (!confirm('Revoke this API key? Any scripts using it will stop working.')) return;
+    await apiFetch(`/api/auth/api-keys/${keyId}`, { method: 'DELETE' });
+    await loadApiKeys();
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

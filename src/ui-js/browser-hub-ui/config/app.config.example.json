@@ -1,0 +1,17 @@
+{
+  "appTitle": "BrowserHub",
+  "logoUrl": "",
+  "adminKey": "change-me-to-a-strong-random-string",
+  "jwtSecret": "change-me-to-a-long-random-secret-at-least-32-chars",
+  "googleClientId": "",
+  "googleClientSecret": "",
+  "googleRedirectUri": "http://localhost:3000/api/auth/google/callback",
+  "ads": [],
+  "rateLimits": {
+    "maxUrlsPerJob": 500,
+    "maxFileSizeMB": 10,
+    "maxConcurrency": 16,
+    "maxJobsPerHour": 100,
+    "scrapeTimeoutMs": 60000
+  }
+}

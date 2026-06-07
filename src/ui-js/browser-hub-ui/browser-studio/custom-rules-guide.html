@@ -1,0 +1,670 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Custom JS Rules Guide — BrowserHub</title>
+<link rel="stylesheet" href="/css/main.css">
+<style>
+  pre { background:var(--bg-input); border:1px solid var(--border-1); border-radius:var(--r-md); padding:16px; overflow-x:auto; }
+  code { font-family:var(--mono); font-size:0.82rem; }
+  pre code { font-size:0.8rem; line-height:1.6; color:var(--text-1); }
+  .example-grid { display:flex; flex-direction:column; gap:24px; }
+  .example-card { background:var(--bg-card); border:1px solid var(--border-1); border-radius:var(--r-lg); overflow:hidden; }
+  .example-header { padding:14px 20px; background:var(--bg-input); border-bottom:1px solid var(--border-1); display:flex; align-items:center; gap:10px; }
+  .example-header h3 { margin:0; font-size:0.9rem; font-weight:600; color:var(--text-1); }
+  .example-body { padding:16px 20px; display:flex; flex-direction:column; gap:10px; }
+  .example-desc { font-size:0.84rem; color:var(--text-2); }
+  .copy-btn-sm { background:none; border:1px solid var(--border-1); border-radius:var(--r-sm); padding:2px 10px; font-size:0.72rem; color:var(--text-2); cursor:pointer; }
+  .copy-btn-sm:hover { background:var(--bg-hover); color:var(--text-1); }
+  .cat-label { font-size:0.7rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-3); padding:2px 8px; border-radius:var(--r-sm); background:var(--bg-input); }
+  .toc { display:flex; flex-wrap:wrap; gap:8px; }
+  .toc a { font-size:0.82rem; color:var(--blue-l); text-decoration:none; padding:4px 12px; border:1px solid var(--border-1); border-radius:var(--r-sm); background:var(--bg-card); }
+  .toc a:hover { background:var(--bg-hover); }
+  .api-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  .api-table th { text-align:left; padding:8px 12px; background:var(--bg-input); border-bottom:2px solid var(--border-1); color:var(--text-2); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em; }
+  .api-table td { padding:8px 12px; border-bottom:1px solid var(--border-2); color:var(--text-1); vertical-align:top; }
+  .api-table td:first-child { font-family:var(--mono); font-size:0.78rem; color:var(--blue-l); }
+  .api-table td:last-child { color:var(--text-2); }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/browser-studio/index.html">
+      
+      <span class="nav-title">BrowserHub</span>
+    </a>
+    <ul class="nav-links">
+      <li><a class="nav-link" href="/browser-studio/index.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        Dashboard
+      </a></li>
+      <li><a class="nav-link" href="/browser-studio/rules.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M12 2v2m0 16v2M4.93 4.93a10 10 0 000 14.14M2 12h2m16 0h2"/></svg>
+        Rules
+      </a></li>
+      <li><a class="nav-link active" href="/browser-studio/custom-rules-guide.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Guide
+      </a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="container-sm">
+
+    <div class="page-header">
+      <h1>Custom JS Rules Guide</h1>
+      <p>Write JavaScript that runs inside the browser for each DOM element. Return a string to flag it, or <code>null</code> to skip.</p>
+    </div>
+
+    <!-- API Reference -->
+    <div class="card mb-6">
+      <div class="card-header"><h2>Available Variables</h2></div>
+      <div class="card-body" style="padding:0;">
+        <table class="api-table">
+          <thead><tr><th>Variable</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>el</td><td>Element</td><td>The DOM element being evaluated</td></tr>
+            <tr><td>st</td><td>CSSStyleDeclaration</td><td><code>window.getComputedStyle(el)</code> — all computed CSS values</td></tr>
+            <tr><td>rect</td><td>DOMRect</td><td><code>el.getBoundingClientRect()</code> — position and dimensions</td></tr>
+            <tr><td>area</td><td>number</td><td><code>rect.width * rect.height</code> — pre-calculated element area in px²</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Return values -->
+    <div class="card mb-6">
+      <div class="card-header"><h2>Return Values</h2></div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;align-items:start;">
+          <code style="background:var(--bg-input);padding:6px 10px;border-radius:var(--r-sm);display:block;">"some text"</code>
+          <span style="font-size:0.84rem;color:var(--text-2);padding-top:4px;">Flag this element — the string becomes the detail shown in scan results</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;align-items:start;">
+          <code style="background:var(--bg-input);padding:6px 10px;border-radius:var(--r-sm);display:block;">{ detail: "..." }</code>
+          <span style="font-size:0.84rem;color:var(--text-2);padding-top:4px;">Same as string, object form for future extensibility</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;align-items:start;">
+          <code style="background:var(--bg-input);padding:6px 10px;border-radius:var(--r-sm);display:block;">null / undefined</code>
+          <span style="font-size:0.84rem;color:var(--text-2);padding-top:4px;">Skip this element — no finding recorded</span>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-3);margin:0;">Errors thrown by your script are silently ignored per element so one bad node won't stop the scan.</p>
+      </div>
+    </div>
+
+    <!-- TOC -->
+    <div class="card mb-6">
+      <div class="card-header"><h2>Jump to Category</h2></div>
+      <div class="card-body">
+        <div class="toc">
+          <a href="#typography">Typography</a>
+          <a href="#color-contrast">Color &amp; Contrast</a>
+          <a href="#images-media">Images &amp; Media</a>
+          <a href="#accessibility">Accessibility</a>
+          <a href="#layout-spacing">Layout &amp; Spacing</a>
+          <a href="#content-quality">Content Quality</a>
+          <a href="#links-buttons">Links &amp; Buttons</a>
+          <a href="#visibility">Visibility</a>
+          <a href="#performance">Performance</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Typography ── -->
+    <h2 id="typography" style="margin:32px 0 16px;font-size:1rem;font-weight:700;color:var(--text-1);">Typography</h2>
+    <div class="example-grid">
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">typography</span>
+          <h3>Small font size</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Flag any text element with a computed font size below 12px.</p>
+          <pre><code>const fs = parseFloat(st.fontSize);
+return fs > 0 &amp;&amp; fs &lt; 12 ? `${fs}px font-size` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">typography</span>
+          <h3>Line height too tight</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Detects paragraphs and headings where line-height is below 1.3× the font size — hard to read.</p>
+          <pre><code>const tags = ['P','H1','H2','H3','H4','H5','H6','LI'];
+if (!tags.includes(el.tagName)) return null;
+const fs = parseFloat(st.fontSize);
+const lh = parseFloat(st.lineHeight);
+if (!fs || !lh) return null;
+return lh / fs &lt; 1.3 ? `line-height ${lh.toFixed(1)}px / font ${fs}px` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">typography</span>
+          <h3>Heading hierarchy skip</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Flags an H3/H4/H5/H6 that has no preceding H2 on the page — broken heading hierarchy hurts accessibility.</p>
+          <pre><code>const level = parseInt(el.tagName[1]);
+if (isNaN(level) || level &lt;= 2) return null;
+const prev = document.querySelector(`h${level - 1}`);
+return !prev ? `${el.tagName} with no preceding H${level - 1}` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">typography</span>
+          <h3>Letter spacing too tight</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Flags elements where letter-spacing is below -0.05em — text becomes unreadable when letters overlap.</p>
+          <pre><code>const ls = st.letterSpacing;
+if (ls === 'normal') return null;
+const fs = parseFloat(st.fontSize) || 16;
+const lsPx = ls.endsWith('em') ? parseFloat(ls) * fs : parseFloat(ls);
+return lsPx &lt; -(fs * 0.05) ? `letter-spacing ${ls}` : null;</code></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Color & Contrast ── -->
+    <h2 id="color-contrast" style="margin:32px 0 16px;font-size:1rem;font-weight:700;color:var(--text-1);">Color &amp; Contrast</h2>
+    <div class="example-grid">
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">contrast</span>
+          <h3>Low contrast text (approx WCAG AA)</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Checks foreground vs background luminance ratio. Flags when below 4.5:1 on text elements.</p>
+          <pre><code>const tags = ['P','SPAN','H1','H2','H3','H4','H5','H6','A','LI','TD','TH','LABEL','BUTTON'];
+if (!tags.includes(el.tagName)) return null;
+function lum(c) {
+  const m = c.match(/\d+/g);
+  if (!m || m.length &lt; 3) return null;
+  return m.slice(0,3).map(Number).map(v => {
+    v /= 255;
+    return v &lt;= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  }).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+}
+const L1 = lum(st.color), L2 = lum(st.backgroundColor);
+if (L1 === null || L2 === null) return null;
+const hi = Math.max(L1, L2), lo = Math.min(L1, L2);
+const ratio = (hi + 0.05) / (lo + 0.05);
+return ratio &lt; 4.5 ? `contrast ${ratio.toFixed(2)}:1 (WCAG AA min 4.5)` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">contrast</span>
+          <h3>Invisible text (same color as background)</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Detects elements where text color is identical or near-identical to the background — invisible but indexable.</p>
+          <pre><code>const fg = st.color.match(/\d+/g);
+const bg = st.backgroundColor.match(/\d+/g);
+if (!fg || !bg || bg[3] === '0') return null;
+const diff = Math.abs(+fg[0]-+bg[0]) + Math.abs(+fg[1]-+bg[1]) + Math.abs(+fg[2]-+bg[2]);
+return diff &lt; 30 ? `text color ~= background (diff ${diff})` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">contrast</span>
+          <h3>White text on white background</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Specifically catches white-on-white — a common accidental invisibility pattern.</p>
+          <pre><code>const fg = st.color.match(/\d+/g);
+const bg = st.backgroundColor.match(/\d+/g);
+if (!fg || !bg) return null;
+const fgWhite = +fg[0] > 240 &amp;&amp; +fg[1] > 240 &amp;&amp; +fg[2] > 240;
+const bgWhite = +bg[0] > 240 &amp;&amp; +bg[1] > 240 &amp;&amp; +bg[2] > 240;
+return fgWhite &amp;&amp; bgWhite ? 'white text on white background' : null;</code></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Images & Media ── -->
+    <h2 id="images-media" style="margin:32px 0 16px;font-size:1rem;font-weight:700;color:var(--text-1);">Images &amp; Media</h2>
+    <div class="example-grid">
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">images</span>
+          <h3>Missing alt text on images</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Flags <code>&lt;img&gt;</code> elements with no alt attribute or an empty alt that isn't intentionally decorative.</p>
+          <pre><code>if (el.tagName !== 'IMG') return null;
+const alt = el.getAttribute('alt');
+if (alt === null) return 'img missing alt attribute';
+if (alt.trim() === '' &amp;&amp; el.getAttribute('role') !== 'presentation') return 'img has empty alt (not marked decorative)';
+return null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">images</span>
+          <h3>Oversized images (width &gt; 1200px rendered)</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Flags images rendered wider than 1200px — usually a sign of missing max-width or an unoptimized asset.</p>
+          <pre><code>if (el.tagName !== 'IMG') return null;
+return rect.width > 1200 ? `rendered at ${Math.round(rect.width)}px wide` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">images</span>
+          <h3>Broken image (natural size is 0)</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Detects images that loaded but have zero natural dimensions — indicative of a broken or 1×1 tracking pixel used as a layout element.</p>
+          <pre><code>if (el.tagName !== 'IMG') return null;
+if (!el.complete) return null;
+return (el.naturalWidth === 0 || el.naturalHeight === 0) ? `broken image (natural ${el.naturalWidth}×${el.naturalHeight})` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">images</span>
+          <h3>Stretched / distorted image</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Compares the rendered aspect ratio to the natural aspect ratio. A large difference means the image is being stretched.</p>
+          <pre><code>if (el.tagName !== 'IMG' || !el.naturalWidth || !el.naturalHeight) return null;
+const natRatio = el.naturalWidth / el.naturalHeight;
+const rendRatio = rect.width / rect.height;
+if (!rendRatio) return null;
+const diff = Math.abs(natRatio - rendRatio) / natRatio;
+return diff > 0.15 ? `distorted image (natural ${el.naturalWidth}×${el.naturalHeight}, rendered ${Math.round(rect.width)}×${Math.round(rect.height)})` : null;</code></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Accessibility ── -->
+    <h2 id="accessibility" style="margin:32px 0 16px;font-size:1rem;font-weight:700;color:var(--text-1);">Accessibility</h2>
+    <div class="example-grid">
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">a11y</span>
+          <h3>Interactive element with no accessible name</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Buttons and links must have visible text, aria-label, or aria-labelledby. Flags those that don't.</p>
+          <pre><code>if (el.tagName !== 'BUTTON' &amp;&amp; el.tagName !== 'A') return null;
+const text = (el.textContent || '').trim();
+const aria = el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') || el.getAttribute('title');
+return !text &amp;&amp; !aria ? `${el.tagName.toLowerCase()} has no accessible name` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">a11y</span>
+          <h3>Input without associated label</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Form inputs (excluding hidden/submit/button types) should have a <code>&lt;label&gt;</code>, aria-label, or placeholder.</p>
+          <pre><code>if (el.tagName !== 'INPUT') return null;
+const type = (el.getAttribute('type') || '').toLowerCase();
+if (['hidden','submit','button','image','reset'].includes(type)) return null;
+const id = el.id;
+const hasLabel = id &amp;&amp; document.querySelector(`label[for="${id}"]`);
+const hasAria = el.getAttribute('aria-label') || el.getAttribute('aria-labelledby');
+const hasPlaceholder = el.getAttribute('placeholder');
+return !hasLabel &amp;&amp; !hasAria &amp;&amp; !hasPlaceholder ? 'input has no label, aria-label, or placeholder' : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">a11y</span>
+          <h3>Tiny tap target (below 44×44px)</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">WCAG 2.5.5 recommends at least 44×44px for interactive controls. Flags buttons, links, and inputs that are too small.</p>
+          <pre><code>const tags = ['BUTTON','A','INPUT','SELECT','LABEL'];
+if (!tags.includes(el.tagName)) return null;
+if (rect.width === 0 || rect.height === 0) return null;
+if (rect.width &lt; 44 || rect.height &lt; 44) {
+  return `tap target ${Math.round(rect.width)}×${Math.round(rect.height)}px (min 44×44)`;
+}
+return null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">a11y</span>
+          <h3>Role=button without keyboard handler</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Non-button elements using role="button" must also have a tabindex and keyboard listeners. Detects the most common missing piece.</p>
+          <pre><code>if (el.getAttribute('role') !== 'button') return null;
+if (el.tagName === 'BUTTON' || el.tagName === 'A') return null;
+const tabindex = el.getAttribute('tabindex');
+return tabindex === null ? 'role=button element missing tabindex' : null;</code></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Layout & Spacing ── -->
+    <h2 id="layout-spacing" style="margin:32px 0 16px;font-size:1rem;font-weight:700;color:var(--text-1);">Layout &amp; Spacing</h2>
+    <div class="example-grid">
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">layout</span>
+          <h3>Element overflowing viewport width</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Flags elements whose right edge extends beyond the viewport — causes horizontal scrollbar on mobile.</p>
+          <pre><code>const vw = window.innerWidth;
+if (rect.left &lt; 0 || rect.width === 0) return null;
+return rect.right > vw + 2 ? `overflows viewport by ${Math.round(rect.right - vw)}px` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">layout</span>
+          <h3>Fixed pixel width on containers</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Detects divs and sections with explicit pixel widths above 300px — these can break fluid layouts on small screens.</p>
+          <pre><code>if (!['DIV','SECTION','ARTICLE','MAIN','ASIDE','HEADER','FOOTER'].includes(el.tagName)) return null;
+const w = el.style.width || st.width;
+if (!w || !w.endsWith('px')) return null;
+const px = parseFloat(w);
+return px > 300 ? `fixed width ${px}px on ${el.tagName.toLowerCase()}` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">layout</span>
+          <h3>Absolute positioning outside parent</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Flags absolutely-positioned elements whose bounding box extends outside their positioned ancestor — often an unnoticed overflow.</p>
+          <pre><code>if (st.position !== 'absolute') return null;
+const parent = el.offsetParent;
+if (!parent) return null;
+const pr = parent.getBoundingClientRect();
+const overflow = rect.right > pr.right + 2 || rect.bottom > pr.bottom + 2 || rect.left &lt; pr.left - 2 || rect.top &lt; pr.top - 2;
+return overflow ? `absolute element overflows its positioned parent` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">layout</span>
+          <h3>Zero-height clickable area</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Buttons or links collapsed to zero height — present in DOM but not clickable.</p>
+          <pre><code>if (el.tagName !== 'BUTTON' &amp;&amp; el.tagName !== 'A') return null;
+return rect.height &lt; 1 ? `${el.tagName.toLowerCase()} has zero rendered height` : null;</code></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Content Quality ── -->
+    <h2 id="content-quality" style="margin:32px 0 16px;font-size:1rem;font-weight:700;color:var(--text-1);">Content Quality</h2>
+    <div class="example-grid">
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">content</span>
+          <h3>Lorem ipsum placeholder text</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Detects any element whose visible text contains "Lorem ipsum" — a common sign of unfinished pages.</p>
+          <pre><code>const text = el.textContent || '';
+return /lorem\s+ipsum/i.test(text) ? 'contains Lorem ipsum placeholder text' : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">content</span>
+          <h3>TODO / FIXME in visible text</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Finds developer notes accidentally left in production copy.</p>
+          <pre><code>const t = (el.textContent || '').trim();
+const m = t.match(/\b(TODO|FIXME|HACK|XXX|PLACEHOLDER)\b/i);
+return m ? `"${m[0]}" in visible text` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">content</span>
+          <h3>Empty heading tags</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Heading elements with no text content confuse screen readers and break page outline.</p>
+          <pre><code>if (!/^H[1-6]$/.test(el.tagName)) return null;
+return !(el.textContent || '').trim() ? `empty ${el.tagName} tag` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">content</span>
+          <h3>Long paragraph without line break (&gt;500 chars)</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Very long dense paragraphs reduce readability. Flags P elements with more than 500 visible characters.</p>
+          <pre><code>if (el.tagName !== 'P') return null;
+const len = (el.textContent || '').trim().length;
+return len > 500 ? `paragraph is ${len} characters — consider breaking it up` : null;</code></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Links & Buttons ── -->
+    <h2 id="links-buttons" style="margin:32px 0 16px;font-size:1rem;font-weight:700;color:var(--text-1);">Links &amp; Buttons</h2>
+    <div class="example-grid">
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">links</span>
+          <h3>Link opens in new tab without warning</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Links that open in a new tab should inform users — commonly done with an icon or aria-label. Flags those that don't.</p>
+          <pre><code>if (el.tagName !== 'A') return null;
+if (el.getAttribute('target') !== '_blank') return null;
+const hasWarning = el.getAttribute('aria-label') || el.querySelector('[aria-label]') || el.querySelector('[title*="new"]');
+return !hasWarning ? 'opens in new tab without accessible indication' : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">links</span>
+          <h3>"Click here" link text</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Generic link text like "click here" or "read more" is meaningless when read in isolation by screen readers.</p>
+          <pre><code>if (el.tagName !== 'A') return null;
+const text = (el.textContent || '').trim().toLowerCase();
+const bad = ['click here','here','read more','more','learn more','this','link'];
+return bad.includes(text) ? `non-descriptive link text: "${text}"` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">buttons</span>
+          <h3>Submit button outside a form</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Submit inputs/buttons not inside a <code>&lt;form&gt;</code> won't function as expected when JS is disabled.</p>
+          <pre><code>if (el.tagName !== 'BUTTON' &amp;&amp; el.tagName !== 'INPUT') return null;
+const type = (el.getAttribute('type') || '').toLowerCase();
+if (type !== 'submit') return null;
+return !el.closest('form') ? 'submit button is not inside a form element' : null;</code></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Visibility ── -->
+    <h2 id="visibility" style="margin:32px 0 16px;font-size:1rem;font-weight:700;color:var(--text-1);">Visibility</h2>
+    <div class="example-grid">
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">visibility</span>
+          <h3>Off-screen element with content</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Detects elements positioned far off-screen (common SEO spam pattern or debug artifact) that have non-empty text.</p>
+          <pre><code>if (!el.textContent.trim()) return null;
+if (rect.width === 0 || rect.height === 0) return null;
+const offscreen = rect.right &lt; -200 || rect.left > window.innerWidth + 200 || rect.bottom &lt; -200 || rect.top > window.innerHeight + 3000;
+return offscreen ? `off-screen element at (${Math.round(rect.left)},${Math.round(rect.top)})` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">visibility</span>
+          <h3>Low opacity element</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Elements with opacity below 0.3 that contain text — may appear invisible but are still in the DOM.</p>
+          <pre><code>const op = parseFloat(st.opacity);
+if (isNaN(op) || op >= 0.3) return null;
+if (!(el.textContent || '').trim()) return null;
+return `opacity ${op} on element with text content`;</code></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Performance ── -->
+    <h2 id="performance" style="margin:32px 0 16px;font-size:1rem;font-weight:700;color:var(--text-1);">Performance</h2>
+    <div class="example-grid">
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">performance</span>
+          <h3>Inline style attribute with many properties</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Elements with excessively long inline style strings (15+ properties) are hard to maintain and slow style recalculation.</p>
+          <pre><code>const style = el.getAttribute('style') || '';
+const count = style.split(';').filter(s => s.trim()).length;
+return count > 15 ? `${count} inline style properties — consider extracting to a class` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">performance</span>
+          <h3>GIF image (consider video/WebP)</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">GIFs are far larger than equivalent videos or WebP animations. Flags any <code>&lt;img&gt;</code> loading a .gif URL.</p>
+          <pre><code>if (el.tagName !== 'IMG') return null;
+const src = el.getAttribute('src') || el.src || '';
+return /\.gif(\?|$)/i.test(src) ? `GIF image: ${src.split('/').pop()}` : null;</code></pre>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header">
+          <span class="cat-label">performance</span>
+          <h3>Background image on large element (potential LCP)</h3>
+          <button class="copy-btn-sm" onclick="copyExample(this)">Copy</button>
+        </div>
+        <div class="example-body">
+          <p class="example-desc">Large background-image divs (hero sections) should use <code>&lt;img&gt;</code> for LCP optimisation. Flags divs with a background-image and area over 100,000 px².</p>
+          <pre><code>if (el.tagName !== 'DIV' &amp;&amp; el.tagName !== 'SECTION') return null;
+if (area &lt; 100000) return null;
+const bg = st.backgroundImage;
+if (!bg || bg === 'none') return null;
+return `large background-image on ${el.tagName.toLowerCase()} (${Math.round(rect.width)}×${Math.round(rect.height)}) — consider &lt;img&gt; for LCP`;</code></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="height:48px;"></div>
+
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script>
+function copyExample(btn) {
+  const code = btn.closest('.example-card').querySelector('pre code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+  }).catch(() => {});
+}
+</script>
+</body>
+</html>

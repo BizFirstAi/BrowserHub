@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Observability — Browser Hub</title>
+<script src="/socket.io/socket.io.js"></script>
+<link rel="stylesheet" href="/browser-studio/shell.css">
+<script src="/browser-studio/shell.js" defer></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--s1:#161b26;--s2:#1a2233;--br:#232b3a;--br2:#2d3a50;--tx:#e2e8f0;--muted:#6b7a96;--acc:#4a9eed;--ok:#48bb78;--err:#e05252;--warn:#ecc94b}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.page{max-width:1100px;margin:0 auto;padding:28px 24px}
+h1{font-size:22px;font-weight:700;color:#f7fafc;margin-bottom:4px}
+.subtitle{font-size:14px;color:var(--muted);margin-bottom:24px}
+
+/* ── Key metrics grid ── */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px}
+.metric-card{background:var(--s1);border:1px solid var(--br);border-radius:10px;padding:16px 18px}
+.metric-label{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.metric-value{font-size:28px;font-weight:700;color:#f7fafc;line-height:1}
+.metric-sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* ── Job type cards ── */
+.jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:24px}
+.job-card{background:var(--s1);border:1px solid var(--br);border-radius:10px;padding:16px 18px}
+.job-type{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--acc);margin-bottom:10px}
+.job-stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.job-stat-label{font-size:12px;color:var(--muted)}
+.job-stat-val{font-size:13px;font-weight:600;color:var(--tx)}
+.rate{font-size:11px;padding:2px 7px;border-radius:4px;font-weight:700}
+.rate-ok{background:#1a3a28;color:var(--ok)}
+.rate-warn{background:#3d2c00;color:var(--warn)}
+.rate-err{background:#2a1a1a;color:var(--err)}
+.rate-na{background:var(--s2);color:var(--muted)}
+
+/* ── Event log ── */
+.log-panel{background:var(--s1);border:1px solid var(--br);border-radius:10px;padding:16px 18px}
+.log-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.log-header h2{font-size:15px;font-weight:600}
+.log-controls{display:flex;gap:8px;align-items:center}
+.log-controls select{background:var(--s2);border:1px solid var(--br2);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--tx);outline:none;width:auto}
+.log-btn{padding:5px 12px;border-radius:6px;background:var(--s2);border:1px solid var(--br2);font-size:12px;color:var(--muted)}
+.log-btn:hover{border-color:var(--acc);color:var(--acc)}
+.log-btn.live{background:#1a2a4a;border-color:var(--acc);color:var(--acc)}
+
+#eventLog{height:360px;overflow-y:auto;font-family:monospace;font-size:12px}
+#eventLog::-webkit-scrollbar{width:5px}
+#eventLog::-webkit-scrollbar-thumb{background:var(--br2);border-radius:3px}
+.log-entry{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--br);line-height:1.4}
+.log-entry:last-child{border-bottom:none}
+.log-ts{color:var(--muted);white-space:nowrap;flex-shrink:0}
+.log-type{flex-shrink:0;width:100px;font-weight:700}
+.log-type.start{color:#63b3ed}
+.log-type.done{color:var(--ok)}
+.log-type.error{color:var(--err)}
+.log-type.retry{color:var(--warn)}
+.log-type.log{color:var(--muted)}
+.log-msg{color:var(--tx);word-break:break-all}
+
+/* ── Auth ── */
+.auth-bar{background:var(--s1);border:1px solid var(--br);border-radius:10px;padding:14px 18px;display:flex;gap:10px;align-items:center;margin-bottom:20px}
+.auth-bar input{max-width:260px;background:var(--s2);border:1px solid var(--br2);border-radius:7px;padding:7px 12px;color:var(--tx);font:inherit;outline:none}
+.auth-bar input:focus{border-color:var(--acc)}
+.btn-primary{background:var(--acc);color:#fff;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600}
+.btn-primary:hover{background:#3182ce}
+
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px rgba(72,187,120,.3);display:inline-block;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(72,187,120,.3)}50%{box-shadow:0 0 0 5px rgba(72,187,120,.1)}}
+
+.uptime{font-size:11px;color:var(--muted);text-align:right}
+</style>
+</head>
+<body class="has-sidebar">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <a href="/browser-studio/index.html" class="sb-brand-link">
+      <div class="sb-brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="#fff" stroke="none"/></svg>
+      </div>
+      <div>
+        <div class="sb-brand-name">Browser Hub</div>
+        
+      </div>
+    </a>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">
+      <div class="sb-section-label">Web Validator</div>
+      <a class="sb-item" href="/browser-studio/index.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg><span>Dashboard</span></a>
+      <a class="sb-item" href="/browser-studio/scan.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>Live Scan</span></a>
+      <a class="sb-item" href="/browser-studio/results.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Results</span></a>
+      <a class="sb-item" href="/browser-studio/rules.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>Rules</span></a>
+      <a class="sb-item" href="/browser-studio/validator-settings.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Web Extractor</div>
+      <a class="sb-item" href="/browser-studio/extractor.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 8 8 21H3v-5L16 3"/></svg><span>Extractor</span></a>
+      <a class="sb-item" href="/browser-studio/extractor-settings.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Video Studio</div>
+      <a class="sb-item" href="/video-studio/studio.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg><span>Open Studio</span><svg class="sb-ext-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+      <a class="sb-item" href="/browser-studio/video-settings.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Platform</div>
+      <a class="sb-item" href="/browser-studio/admin.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Admin</span></a>
+      <a class="sb-item" href="/browser-studio/observability.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Observability</span></a>
+      <a class="sb-item" href="/browser-studio/webhooks.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span>Webhooks</span></a>
+      <a class="sb-item" href="/browser-studio/proxies.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span>Proxies</span></a>
+      <a class="sb-item" href="/browser-studio/docs.html"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span>Docs</span></a>
+    </div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-user-info">
+        <div class="sb-user-dot"></div>
+        <span class="sb-user-name" id="sbUserName">...</span>
+      </div>
+      <button class="sb-signout" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+</aside>
+
+<main class="main-area">
+
+<div class="page">
+  <h1>Observability</h1>
+  <p class="subtitle">Real-time job metrics, memory usage, and event log stream.</p>
+
+  <div class="auth-bar">
+    <input type="password" id="adminKey" placeholder="Admin key">
+    <button class="btn-primary" onclick="connect()">Connect</button>
+    <span id="liveStatus" style="font-size:12px;color:var(--muted);margin-left:8px"></span>
+  </div>
+
+  <!-- System metrics -->
+  <div class="metrics-grid" id="sysGrid">
+    <div class="metric-card"><div class="metric-label">Heap Used</div><div class="metric-value" id="mHeap">—</div><div class="metric-sub">MB</div></div>
+    <div class="metric-card"><div class="metric-label">RSS</div><div class="metric-value" id="mRss">—</div><div class="metric-sub">MB</div></div>
+    <div class="metric-card"><div class="metric-label">System RAM Free</div><div class="metric-value" id="mFree">—</div><div class="metric-sub">GB</div></div>
+    <div class="metric-card"><div class="metric-label">Uptime</div><div class="metric-value" id="mUp">—</div><div class="metric-sub" id="mUpUnit">s</div></div>
+  </div>
+
+  <!-- Job type metrics -->
+  <div class="jobs-grid" id="jobsGrid"></div>
+
+  <!-- Event log -->
+  <div class="log-panel">
+    <div class="log-header">
+      <h2><span class="live-dot" id="liveDot" style="display:none;margin-right:8px"></span>Event Log</h2>
+      <div class="log-controls">
+        <select id="logFilter" onchange="applyFilter()">
+          <option value="">All events</option>
+          <option value="job.start">start</option>
+          <option value="job.done">done</option>
+          <option value="job.error">error</option>
+          <option value="job.retry">retry</option>
+        </select>
+        <button class="log-btn" id="btnLive" onclick="toggleLive()">Live</button>
+        <button class="log-btn" onclick="clearLog()">Clear</button>
+      </div>
+    </div>
+    <div id="eventLog"><div style="color:var(--muted);padding:20px 0;text-align:center">Connect with admin key to see events</div></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/metrics';
+let _key    = localStorage.getItem('adminKey') || '';
+let _live   = false;
+let _socket = null;
+let _poll   = null;
+let _logEntries = [];
+let _filterType = '';
+
+if (_key) document.getElementById('adminKey').value = _key;
+
+function h() { return { 'x-admin-key': _key }; }
+
+async function apiFetch(url) {
+    const r = await fetch(url, { headers: h() });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}
+
+async function connect() {
+    _key = document.getElementById('adminKey').value.trim();
+    localStorage.setItem('adminKey', _key);
+    await loadSnapshot();
+    await loadLog();
+    startLive();
+    _poll = setInterval(loadSnapshot, 5000);
+}
+
+async function loadSnapshot() {
+    try {
+        const data = await apiFetch(API);
+        renderSys(data.sys);
+        renderJobs(data.jobs);
+    } catch(err) {
+        document.getElementById('liveStatus').textContent = 'Error: ' + err.message;
+    }
+}
+
+async function loadLog() {
+    try {
+        const log = await apiFetch(`${API}/log?limit=200`);
+        _logEntries = log;
+        renderLog();
+    } catch {}
+}
+
+function renderSys(s) {
+    document.getElementById('mHeap').textContent  = s.heapUsedMB;
+    document.getElementById('mRss').textContent   = s.rssMB;
+    document.getElementById('mFree').textContent  = s.systemMemFreeGB;
+    const up = s.uptimeSeconds;
+    const [val, unit] = up > 3600
+        ? [(up/3600).toFixed(1), 'hours']
+        : up > 60
+        ? [Math.floor(up/60), 'min']
+        : [up, 's'];
+    document.getElementById('mUp').textContent     = val;
+    document.getElementById('mUpUnit').textContent = unit;
+}
+
+function renderJobs(jobs) {
+    const grid = document.getElementById('jobsGrid');
+    grid.innerHTML = Object.entries(jobs).map(([type, j]) => {
+        const rateClass = j.successRate === null ? 'rate-na'
+            : j.successRate >= 90 ? 'rate-ok'
+            : j.successRate >= 70 ? 'rate-warn' : 'rate-err';
+        return `<div class="job-card">
+            <div class="job-type">${type}</div>
+            <div class="job-stat-row"><span class="job-stat-label">Active</span><span class="job-stat-val">${j.active}</span></div>
+            <div class="job-stat-row"><span class="job-stat-label">Started</span><span class="job-stat-val">${j.started}</span></div>
+            <div class="job-stat-row"><span class="job-stat-label">Done</span><span class="job-stat-val">${j.done}</span></div>
+            <div class="job-stat-row"><span class="job-stat-label">Errors</span><span class="job-stat-val" style="${j.error>0?'color:var(--err)':''}">${j.error}</span></div>
+            <div class="job-stat-row"><span class="job-stat-label">Retries</span><span class="job-stat-val">${j.retries}</span></div>
+            <div class="job-stat-row"><span class="job-stat-label">Success rate</span>
+              <span class="rate ${rateClass}">${j.successRate !== null ? j.successRate+'%' : 'n/a'}</span></div>
+            <div class="job-stat-row"><span class="job-stat-label">Avg duration</span>
+              <span class="job-stat-val">${j.avgDurationMs ? (j.avgDurationMs/1000).toFixed(1)+'s' : '—'}</span></div>
+        </div>`;
+    }).join('');
+}
+
+function renderLog() {
+    const el = document.getElementById('eventLog');
+    const filtered = _filterType
+        ? _logEntries.filter(e => e.type === _filterType || e.jobType === _filterType)
+        : _logEntries;
+    if (!filtered.length) { el.innerHTML = '<div style="color:var(--muted);padding:16px 0;">No events yet.</div>'; return; }
+    el.innerHTML = filtered.map(e => {
+        const typeClass = e.type === 'job.done' ? 'done'
+            : e.type === 'job.error' ? 'error'
+            : e.type === 'job.retry' ? 'retry'
+            : e.type === 'job.start' ? 'start' : 'log';
+        const ts = new Date(e.at).toLocaleTimeString();
+        const msg = e.error || e.message || (e.jobType ? `${e.jobType} ${e.durationMs ? `(${(e.durationMs/1000).toFixed(1)}s)` : ''}` : '');
+        return `<div class="log-entry">
+            <span class="log-ts">${ts}</span>
+            <span class="log-type ${typeClass}">${e.type||''}</span>
+            <span class="log-msg">${esc(msg)}</span>
+        </div>`;
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+}
+
+function applyFilter() {
+    _filterType = document.getElementById('logFilter').value;
+    renderLog();
+}
+
+function clearLog() { _logEntries = []; renderLog(); }
+
+function startLive() {
+    _live = true;
+    document.getElementById('btnLive').classList.add('live');
+    document.getElementById('liveDot').style.display = 'inline-block';
+    document.getElementById('liveStatus').innerHTML = '<span class="live-dot" style="margin-right:4px"></span>Live';
+    if (_socket) _socket.disconnect();
+    _socket = io();
+    _socket.emit('join:metrics');
+    _socket.on('metrics-event', evt => {
+        _logEntries.unshift(evt);
+        if (_logEntries.length > 500) _logEntries.pop();
+        renderLog();
+    });
+}
+
+function toggleLive() {
+    if (_live) {
+        _live = false;
+        if (_socket) { _socket.disconnect(); _socket = null; }
+        document.getElementById('btnLive').classList.remove('live');
+        document.getElementById('liveDot').style.display = 'none';
+        document.getElementById('liveStatus').textContent = 'Live paused';
+    } else {
+        startLive();
+    }
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+if (_key) connect();
+</script>
+</main>
+</body>
+</html>
+

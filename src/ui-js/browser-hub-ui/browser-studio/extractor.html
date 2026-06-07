@@ -1,0 +1,2270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Extractor — Browser Automation</title>
+<link rel="stylesheet" href="/css/main.css">
+<style>
+/* ─── 3-panel shell ───────────────────────────────────────────────────────── */
+.extractor-shell {
+  display: grid;
+  grid-template-columns: 216px 1fr 300px;
+  grid-template-rows: auto;
+  gap: 20px;
+  align-items: start;
+}
+/* Left sidebar spans all rows */
+.col-sidebar { grid-column: 1; grid-row: 1 / 4; }
+/* Config is row 1, status stacks below it in row 2 */
+.col-config  { grid-column: 2; grid-row: 1; }
+.col-status  { grid-column: 2; grid-row: 2; }
+/* Ads column spans all rows on the right */
+.col-ads     { grid-column: 3; grid-row: 1 / 4; }
+/* Results below config+status */
+.col-results { grid-column: 2; grid-row: 3; }
+
+@media (max-width: 1100px) {
+  .extractor-shell { grid-template-columns: 200px 1fr 280px; }
+}
+@media (max-width: 960px) {
+  .extractor-shell { grid-template-columns: 1fr; }
+  .col-sidebar,.col-config,.col-status,.col-ads,.col-results {
+    grid-column: 1; grid-row: auto;
+  }
+  .col-sidebar { display: flex; flex-wrap: wrap; gap: 6px; }
+  .usecase-card { flex: 1; min-width: 140px; }
+}
+
+/* ─── Use-case sidebar ───────────────────────────────────────────────────── */
+.sidebar-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  color: var(--text-3); text-transform: uppercase;
+  padding: 0 4px 6px;
+}
+.usecase-card {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 12px; border-radius: 9px;
+  border: 1px solid transparent; cursor: pointer;
+  transition: all .18s; background: transparent; width: 100%; text-align: left;
+}
+.usecase-card:hover { background: var(--bg-card); border-color: var(--border-1); }
+.usecase-card.active { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.4); }
+.uc-icon {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-input); color: var(--text-3); transition: all .18s;
+}
+.usecase-card.active .uc-icon { color: var(--blue-l); background: rgba(59,130,246,.15); }
+.uc-name { font-size: 13px; font-weight: 600; color: var(--text-2); line-height: 1.2; }
+.usecase-card.active .uc-name { color: var(--text-1); }
+.uc-desc { font-size: 11px; color: var(--text-3); margin-top: 2px; line-height: 1.35; }
+.sidebar-sep { height: 1px; background: var(--border-0); margin: 4px 0; }
+
+/* ─── Ads panel ──────────────────────────────────────────────────────────── */
+.ads-panel { display: flex; flex-direction: column; gap: 12px; }
+.ads-panel-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  color: var(--text-3); text-transform: uppercase; padding: 0 2px 4px;
+}
+.ad-card {
+  border: 1px solid var(--border-1); border-radius: 10px; overflow: hidden;
+  transition: border-color .18s;
+}
+.ad-card:hover { border-color: var(--border-2); }
+.ad-img {
+  width: 100%; aspect-ratio: 16/7; object-fit: cover;
+  background: var(--bg-input); display: block;
+}
+.ad-img-placeholder {
+  width: 100%; aspect-ratio: 16/7; background: var(--bg-input);
+  display: flex; align-items: center; justify-content: center; color: var(--text-3);
+}
+.ad-body { padding: 12px; }
+.ad-title { font-size: 13px; font-weight: 700; color: var(--text-1); margin-bottom: 4px; }
+.ad-desc  { font-size: 11px; color: var(--text-3); line-height: 1.5; margin-bottom: 10px; }
+.ad-cta {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600; color: var(--blue-l);
+  text-decoration: none; padding: 5px 10px;
+  border: 1px solid rgba(59,130,246,.35); border-radius: 6px;
+  transition: all .18s; background: rgba(59,130,246,.06);
+}
+.ad-cta:hover { background: rgba(59,130,246,.15); border-color: var(--blue); }
+.ads-empty {
+  padding: 24px 12px; text-align: center; color: var(--text-3); font-size: 12px;
+  border: 1px dashed var(--border-1); border-radius: 10px;
+}
+
+.page-wrap { padding-top: 28px !important; }
+
+/* ─── Right panel helpers ────────────────────────────────────────────────── */
+.rp-link {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 7px; border: 1px solid var(--border-1);
+  font-size: 12px; color: var(--text-2); text-decoration: none; transition: all .18s;
+}
+.rp-link:hover { border-color: var(--border-2); color: var(--text-1); }
+.rp-tip {
+  padding: 8px 10px; background: var(--bg-input); border: 1px solid var(--border-0);
+  border-radius: 7px; font-size: 11px; color: var(--text-3); line-height: 1.55;
+}
+.rp-job {
+  padding: 8px 10px; border: 1px solid var(--border-1); border-radius: 7px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.rp-job-row { display: flex; justify-content: space-between; align-items: center; }
+.rp-job-mode { font-size: 11px; font-weight: 600; color: var(--text-2); }
+.rp-job-meta { font-size: 10px; color: var(--text-3); }
+
+/* ─── Mode panes ─────────────────────────────────────────────────────────── */
+.out-pane { display:none; flex-direction:column; gap:14px; }
+.out-pane.active { display:flex; }
+
+/* ─── Mode cards ─────────────────────────────────────────────────────────── */
+.mode-card {
+  flex: 1; display: flex; flex-direction: column; gap: 4px;
+  padding: 10px 12px; border: 1px solid var(--border-2);
+  border-radius: 8px; cursor: pointer; transition: all .18s;
+}
+.mode-card.active { border-color: var(--blue); background: rgba(59,130,246,.08); }
+.mode-card-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-1); }
+.mode-card-desc  { font-size: 11px; color: var(--text-3); padding-left: 18px; }
+
+/* ─── Pool dots ──────────────────────────────────────────────────────────── */
+.pool-dots { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
+.pool-dot  { width:10px; height:10px; border-radius:50%; background:var(--border-2); transition:background .25s; }
+.pool-dot.active { background:var(--green); box-shadow:0 0 6px rgba(16,185,129,.5); }
+
+/* ─── Resource bars ──────────────────────────────────────────────────────── */
+.res-bar-wrap { height:5px; background:var(--border-1); border-radius:3px; overflow:hidden; margin-top:4px; }
+.res-bar-fill { height:100%; border-radius:3px; transition:width .4s ease; }
+
+/* ─── Selector builder ───────────────────────────────────────────────────── */
+.sel-row { display:grid; grid-template-columns:1fr 1fr auto auto auto; gap:6px; align-items:center; margin-bottom:6px; }
+.sel-row input, .sel-row select { font-size:12px; padding:5px 8px; }
+
+/* ─── Thumbnail grid ─────────────────────────────────────────────────────── */
+.slides-grid { display:grid; gap:16px; margin-top:16px; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
+.slides-grid.view-small { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+.slides-grid.view-large { grid-template-columns:repeat(auto-fill,minmax(400px,1fr)); gap:20px; }
+.slides-grid.view-list  { grid-template-columns:1fr; gap:6px; }
+.slide-thumb { background:var(--bg-card); border:1px solid var(--border-1); border-radius:10px; overflow:hidden; }
+.slide-thumb img { width:100%; display:block; aspect-ratio:16/9; object-fit:cover; }
+.slide-thumb-meta { padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.slide-thumb-name { font-size:12px; color:var(--text-2); font-family:var(--mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+.slide-thumb-dl { flex-shrink:0; display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; border:1px solid var(--border-2); background:transparent; color:var(--text-2); cursor:pointer; transition:all .18s; text-decoration:none; }
+.slide-thumb-dl:hover { border-color:var(--blue); color:var(--blue-l); }
+.view-list .slide-thumb { display:flex; align-items:center; border-radius:8px; }
+.view-list .slide-thumb img { width:128px; flex-shrink:0; aspect-ratio:16/9; border-radius:0; }
+.view-list .slide-thumb-meta { flex:1; padding:8px 14px; }
+.view-small .slide-thumb-name,.view-small .slide-thumb-dl { display:none; }
+.view-small .slide-thumb-meta { justify-content:center; padding:4px 6px; font-size:11px; }
+.view-toggle { display:flex; gap:4px; }
+.view-btn { width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:6px; border:1px solid var(--border-2); background:transparent; color:var(--text-2); cursor:pointer; transition:all .18s; }
+.view-btn:hover { border-color:var(--blue); color:var(--blue-l); }
+.view-btn.active { background:rgba(59,130,246,.15); border-color:var(--blue); color:var(--blue-l); }
+
+/* ─── Progress / status ──────────────────────────────────────────────────── */
+.progress-bar-wrap { height:6px; background:var(--border-1); border-radius:3px; margin:12px 0; overflow:hidden; }
+.progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--blue-d),var(--blue-l)); border-radius:3px; transition:width .4s ease; }
+.url-status { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.url-row { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-input); border:1px solid var(--border-1); border-radius:8px; font-size:13px; }
+.url-row .url-text  { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-accent); font-family:var(--mono); font-size:12px; }
+.url-row .url-badge { flex-shrink:0; }
+.url-row .url-count { flex-shrink:0; color:var(--text-3); font-size:12px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:var(--mono); }
+
+/* ─── Source groups ──────────────────────────────────────────────────────── */
+.source-group { border:1px solid var(--border-1); border-radius:10px; overflow:hidden; margin-bottom:16px; }
+.source-group-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--bg-input); border-bottom:1px solid var(--border-1); }
+.source-group-title  { font-size:13px; font-weight:600; color:var(--text-1); display:flex; align-items:center; gap:8px; overflow:hidden; min-width:0; flex:1; }
+.source-group-url    { font-family:var(--mono); font-size:11px; color:var(--text-accent); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
+.source-group-body   { padding:16px; }
+.job-section { display:none; margin-top:20px; }
+.job-section.visible { display:block; }
+.type-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; white-space:nowrap; flex-shrink:0; }
+.type-presentation { background:rgba(16,185,129,.15); color:#34d399; border:1px solid rgba(16,185,129,.25); }
+.type-page { background:rgba(59,130,246,.12); color:var(--blue-l); border:1px solid rgba(59,130,246,.25); }
+
+/* ─── Scraper table ──────────────────────────────────────────────────────── */
+.scrape-table { width:100%; border-collapse:collapse; font-size:12px; }
+.scrape-table th { text-align:left; padding:8px 12px; background:var(--bg-input); color:var(--text-3); font-weight:600; font-size:11px; letter-spacing:.04em; border-bottom:1px solid var(--border-1); position:sticky; top:0; }
+.scrape-table td { padding:8px 12px; border-bottom:1px solid var(--border-0); vertical-align:top; color:var(--text-2); max-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.scrape-table tr:hover td { background:var(--bg-card-h); color:var(--text-1); }
+.scrape-table td.url-cell { color:var(--text-accent); font-family:var(--mono); font-size:11px; }
+.scrape-table td.ok  { color:#34d399; }
+.scrape-table td.err { color:var(--red); }
+.scrape-table-wrap { overflow:auto; max-height:420px; border:1px solid var(--border-1); border-radius:8px; margin-top:16px; }
+
+/* ─── Lead Discovery pane ───────────────────────────────── */
+.ld-progress { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-input); border:1px solid var(--border-0); border-radius:8px; font-size:13px; color:var(--text-2); }
+.ld-progress-bar { flex:1; height:4px; background:var(--border-1); border-radius:2px; overflow:hidden; }
+.ld-progress-fill { height:100%; background:var(--blue); border-radius:2px; transition:width .3s; }
+.ld-table-wrap { overflow-x:auto; max-height:340px; overflow-y:auto; border:1px solid var(--border-0); border-radius:8px; margin-top:12px; }
+.ld-table { width:100%; border-collapse:collapse; font-size:12px; }
+.ld-table th { position:sticky; top:0; background:var(--bg-card); padding:7px 12px; text-align:left; font-weight:600; color:var(--text-2); border-bottom:1px solid var(--border-1); white-space:nowrap; }
+.ld-table td { padding:6px 12px; border-bottom:1px solid var(--border-0); color:var(--text-2); vertical-align:top; }
+.ld-table tr:last-child td { border-bottom:none; }
+.ld-table tr:hover td { background:var(--bg-input); }
+/* ─── DataSet save modal ─────────────────────────────────── */
+.dp-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:2000; display:flex; align-items:center; justify-content:center; }
+.dp-modal { background:var(--bg-card); border:1px solid var(--border-1); border-radius:14px; width:min(500px,94vw); max-height:85vh; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,.7); }
+.dp-modal-head { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 12px; border-bottom:1px solid var(--border-0); }
+.dp-modal-title { font-size:14px; font-weight:700; color:var(--text-1); }
+.dp-modal-body { padding:18px 20px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; }
+.dp-modal-actions { display:flex; justify-content:flex-end; gap:8px; padding:12px 20px 16px; border-top:1px solid var(--border-0); }
+.dp-ds-item { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border:1px solid var(--border-1); border-radius:7px; cursor:pointer; transition:all .15s; font-size:13px; color:var(--text-2); }
+.dp-ds-item:hover { border-color:var(--border-2); color:var(--text-1); background:var(--bg-input); }
+.dp-ds-item.selected { background:rgba(59,130,246,.1); border-color:rgba(59,130,246,.4); color:var(--blue-l); }
+/* ─── Dataset sidebar panel ─────────────────────────────────────────────── */
+.dp-project-row { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-radius:6px; cursor:pointer; transition:all .15s; font-size:12px; font-weight:600; color:var(--text-2); }
+.dp-project-row:hover { background:var(--bg-input); color:var(--text-1); }
+.dp-project-row.open { color:var(--blue-l); }
+.dp-project-toggle { font-size:10px; color:var(--text-3); flex-shrink:0; }
+.dp-datasets-list { margin-left:10px; display:flex; flex-direction:column; gap:1px; }
+.dp-dataset-row { display:flex; align-items:center; justify-content:space-between; padding:5px 10px; border-radius:5px; cursor:pointer; transition:all .15s; font-size:11px; color:var(--text-3); }
+.dp-dataset-row:hover { background:var(--bg-input); color:var(--text-2); }
+.dp-count { font-size:10px; padding:1px 5px; background:var(--bg-input); border-radius:10px; color:var(--text-3); }
+.dp-empty { padding:10px; font-size:11px; color:var(--text-3); text-align:center; }
+.dp-add-ds-btn { font-size:10px; padding:2px 7px; border-radius:4px; background:none; border:1px solid var(--border-1); color:var(--text-3); cursor:pointer; font-family:inherit; transition:all .15s; flex-shrink:0; }
+.dp-add-ds-btn:hover { border-color:var(--blue); color:var(--blue-l); }
+/* ─── Dataset modals ─────────────────────────────────────────────────────── */
+.dp-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:3000; display:flex; align-items:center; justify-content:center; }
+.dp-modal { background:var(--bg-card); border:1px solid var(--border-1); border-radius:14px; width:min(480px,94vw); max-height:85vh; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,.7); }
+.dp-modal-header { display:flex; align-items:center; justify-content:space-between; padding:15px 20px 11px; border-bottom:1px solid var(--border-0); }
+.dp-modal-title { font-size:14px; font-weight:700; color:var(--text-1); }
+.dp-modal-close { background:none; border:none; cursor:pointer; color:var(--text-3); font-size:18px; line-height:1; padding:0 2px; }
+.dp-modal-close:hover { color:var(--text-1); }
+.dp-modal-body { padding:18px 20px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; flex:1; }
+.dp-modal-actions { display:flex; justify-content:flex-end; gap:8px; padding:12px 20px 15px; border-top:1px solid var(--border-0); }
+.dp-save-dataset-item { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border:1px solid var(--border-1); border-radius:7px; cursor:pointer; transition:all .15s; font-size:12px; color:var(--text-2); margin-bottom:4px; }
+.dp-save-dataset-item:hover { border-color:var(--border-2); color:var(--text-1); background:var(--bg-input); }
+.dp-save-dataset-item.sel { background:rgba(59,130,246,.1); border-color:rgba(59,130,246,.4); color:var(--blue-l); }
+.rec-item { padding:8px 10px; border:1px solid var(--border-0); border-radius:7px; margin-bottom:4px; cursor:pointer; transition:all .15s; }
+.rec-item:hover { border-color:var(--border-1); background:var(--bg-input); }
+.rec-item-title { font-size:12px; font-weight:600; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rec-item-url { font-size:11px; color:var(--blue-l); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rec-item-meta { font-size:10px; color:var(--text-3); margin-top:2px; }
+.rec-detail-field { display:flex; gap:10px; padding:5px 0; border-bottom:1px solid var(--border-0); }
+.rec-detail-key { font-size:11px; color:var(--text-3); width:130px; flex-shrink:0; }
+.rec-detail-val { font-size:11px; color:var(--text-2); word-break:break-all; }</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/index.html" id="navBrand">
+      <img id="navLogo" src="" alt="Logo" class="nav-logo" style="display:none" onerror="this.style.display='none'">
+      <span class="nav-title" id="navTitle">Browser Automation</span>
+    </a>
+    <ul class="nav-links">
+      <li><a class="nav-link" href="/index.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        Dashboard
+      </a></li>
+      <li><a class="nav-link active" href="/slides.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Extractor
+      </a></li>
+      <li><a class="nav-link" href="/rules.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M12 2v2m0 16v2M4.93 4.93a10 10 0 000 14.14M2 12h2m16 0h2"/></svg>
+        Rules
+      </a></li>
+      <li><a class="nav-link" href="/admin.html" title="Admin">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        Admin
+      </a></li>
+      <li><a class="nav-link" href="/studio.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Studio
+      </a></li>
+      <li><a class="nav-link" href="/browser-studio/dataset.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        DataSets
+      </a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="container">
+
+    <div class="hero" style="padding-bottom:16px;">
+      <div class="hero-eyebrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        URL Extractor
+      </div>
+      <h1>Extract from URLs</h1>
+      <p>Screenshots, scraped text, video recordings, or PDFs. Browser pool processes multiple URLs simultaneously with proxy rotation and resource-aware concurrency.</p>
+    </div>
+
+    <div class="extractor-shell">
+
+      <!-- ═══ LEFT: Use-case sidebar ═════════════════════════════════════════ -->
+      <aside class="col-sidebar" style="display:flex;flex-direction:column;gap:6px;">
+        <div class="sidebar-label">What to extract</div>
+
+        <button class="usecase-card active" data-mode="images">
+          <div class="uc-icon">
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div>
+            <div class="uc-name">Screenshots</div>
+            <div class="uc-desc">Per-slide or full-page images</div>
+          </div>
+        </button>
+
+        <button class="usecase-card" data-mode="text">
+          <div class="uc-icon">
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+          </div>
+          <div>
+            <div class="uc-name">Scrape Text</div>
+            <div class="uc-desc">Titles, headings, links, body</div>
+          </div>
+        </button>
+
+        <button class="usecase-card" data-mode="videos">
+          <div class="uc-icon">
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          </div>
+          <div>
+            <div class="uc-name">Record Video</div>
+            <div class="uc-desc">MP4 frames or live WebM</div>
+          </div>
+        </button>
+
+        <button class="usecase-card" data-mode="pdf">
+          <div class="uc-icon">
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+          </div>
+          <div>
+            <div class="uc-name">Generate PDF</div>
+            <div class="uc-desc">Landscape A4 per slide</div>
+          </div>
+        </button>
+
+        <div class="sidebar-sep"></div>
+        <div class="sidebar-label" style="margin-top:4px;">Combined</div>
+
+        <button class="usecase-card" data-mode="bulk">
+          <div class="uc-icon">
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><rect x="15" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <div>
+            <div class="uc-name">Bulk Capture</div>
+            <div class="uc-desc">Images + PDF + text in one pass</div>
+          </div>
+        </button>
+
+        <button class="usecase-card" data-mode="structured">
+          <div class="uc-icon">
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <div>
+            <div class="uc-name">Structured Data</div>
+            <div class="uc-desc">JSON-LD, Open Graph, schema</div>
+          </div>
+        </button>
+
+        <button class="usecase-card" data-mode="monitor" style="opacity:.6;">
+          <div class="uc-icon">
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div>
+            <div class="uc-name">Visual Monitor</div>
+            <div class="uc-desc">Detect regressions — coming soon</div>
+          </div>
+        </button>
+
+        <div class="sidebar-sep"></div>
+        <div class="sidebar-label" style="margin-top:4px;">Audio</div>
+
+        <button class="usecase-card" data-mode="narration">
+          <div class="uc-icon">
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          </div>
+          <div>
+            <div class="uc-name">Narration</div>
+            <div class="uc-desc">TTS audio per slide + durations</div>
+          </div>
+        </button>
+        <div class="sidebar-sep"></div>
+        <div class="sidebar-label" style="margin-top:4px;">Lead Gen</div>
+        <button class="usecase-card" data-mode="leads">
+          <div class="uc-icon">
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <div>
+            <div class="uc-name">Lead Discovery</div>
+            <div class="uc-desc">Search directories for business contacts</div>
+          </div>
+        </button>
+
+        <div class="sidebar-sep"></div>
+        <a class="usecase-card" href="/browser-studio/extractor-settings.html" style="text-decoration:none;">
+          <div class="uc-icon">
+            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <div>
+            <div class="uc-name">Settings</div>
+            <div class="uc-desc">Browser pool, output, storage</div>
+          </div>
+        </a>
+      </aside>
+
+      <!-- ═══ CENTER: Config card ════════════════════════════════════════════ -->
+      <div class="card col-config">
+        <div class="card-header">
+          <div>
+            <h2 id="configTitle">Extract Screenshots</h2>
+            <p id="configSubtitle" style="font-size:12px;color:var(--text-3);margin-top:2px;">Capture images of each slide or full-page screenshot</p>
+          </div>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- URLs -->
+          <div class="form-group">
+            <label class="form-label">URLs <span style="color:var(--text-3);font-weight:400;">(one per line)</span></label>
+            <textarea id="urlsInput" class="form-control" rows="5"
+              placeholder="https://your-site.com/page.html&#10;C:\Users\You\Presentation.html"></textarea>
+            <span class="form-hint">HTTP/HTTPS or local Windows paths accepted.</span>
+          </div>
+
+          <!-- Save folder -->
+          <div class="form-group">
+            <label class="form-label">Save to folder <span style="color:var(--text-3);font-weight:400;">(optional)</span></label>
+            <input type="text" id="outputFolder" class="form-control"
+              placeholder="C:\Users\You\export">
+          </div>
+
+          <!-- Browser pool -->
+          <details style="border:1px solid var(--border-1);border-radius:8px;overflow:hidden;">
+            <summary style="padding:10px 14px;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;background:var(--bg-input);user-select:none;">
+              <span style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--text-2);">
+                <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><rect x="15" y="14" width="7" height="7" rx="1"/></svg>
+                Pool — <strong id="concurrencyLabel" style="margin-left:2px;">4</strong>&nbsp;browsers
+              </span>
+              <svg style="width:14px;height:14px;transition:transform .2s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div style="padding:12px;">
+              <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+                <button id="refreshResBtn" style="background:none;border:none;cursor:pointer;color:var(--text-3);padding:2px;" title="Refresh">
+                  <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23,4 23,10 17,10"/><polyline points="1,20 1,14 7,14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                </button>
+              </div>
+              <input type="range" id="concurrency" min="1" max="16" value="4" style="width:100%;accent-color:var(--blue);margin-bottom:4px;">
+              <div id="poolDots" class="pool-dots"></div>
+              <div style="margin-top:8px;font-size:11px;color:var(--text-3);display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                <div>
+                  <span>RAM</span>
+                  <div class="res-bar-wrap"><div id="ramBar" class="res-bar-fill" style="width:0%;background:var(--green)"></div></div>
+                  <span id="ramLabel">—</span>
+                </div>
+                <div>
+                  <span>CPU</span>
+                  <div class="res-bar-wrap"><div id="cpuBar" class="res-bar-fill" style="width:0%;background:var(--blue)"></div></div>
+                  <span id="cpuLabel">—</span>
+                </div>
+                <div>
+                  <span>Disk</span>
+                  <div class="res-bar-wrap"><div id="diskBar" class="res-bar-fill" style="width:0%;background:var(--purple)"></div></div>
+                  <span id="diskLabel">—</span>
+                </div>
+              </div>
+              <div id="resourceWarn" style="display:none;margin-top:6px;font-size:11px;color:var(--yellow);padding:4px 8px;background:rgba(245,158,11,.08);border-radius:4px;border:1px solid rgba(245,158,11,.2);"></div>
+            </div>
+          </details>
+
+          <!-- Proxy rotation -->
+          <details style="border:1px solid var(--border-1);border-radius:8px;overflow:hidden;">
+            <summary style="padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-2);list-style:none;display:flex;align-items:center;justify-content:space-between;background:var(--bg-input);user-select:none;">
+              <span style="display:flex;align-items:center;gap:7px;">
+                <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                Proxy Rotation <span id="proxyCount" style="font-size:11px;color:var(--text-3);font-weight:400;margin-left:4px;"></span>
+              </span>
+              <svg id="proxyChevron" style="width:14px;height:14px;transition:transform .2s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div style="padding:12px;">
+              <label class="form-label">Proxy list <span style="font-weight:400;color:var(--text-3)">(one per line, round-robin per browser)</span></label>
+              <textarea id="proxyList" class="form-control" rows="3"
+                placeholder="http://user:pass@proxy1.example.com:8080&#10;socks5://proxy2.example.com:1080"></textarea>
+              <span class="form-hint">Supports http, https, socks4, socks5.</span>
+            </div>
+          </details>
+
+          <!-- ── Mode panes ── -->
+
+          <!-- Images -->
+          <div class="out-pane active" id="pane-images">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="autoDetect" checked style="accent-color:var(--blue)"> Auto-detect slide presentations (per-slide)</label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="fullPageFallback" checked style="accent-color:var(--blue)"> Full-page screenshot for non-presentation pages</label>
+            </div>
+            <div>
+              <label class="form-label">Resolution</label>
+              <select id="resolution" class="form-control" style="height:38px;">
+                <option value="1920x1080" selected>1920 × 1080 (Full HD)</option>
+                <option value="1280x720">1280 × 720 (HD)</option>
+                <option value="2560x1440">2560 × 1440 (2K)</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Format</label>
+              <div style="display:flex;gap:8px;">
+                <label class="mode-card active" id="fmt-png"><input type="radio" name="imgFormat" value="png" checked style="accent-color:var(--blue);display:none"> PNG</label>
+                <label class="mode-card" id="fmt-jpeg"><input type="radio" name="imgFormat" value="jpeg" style="accent-color:var(--blue);display:none"> JPEG</label>
+                <label class="mode-card" id="fmt-webp"><input type="radio" name="imgFormat" value="webp" style="accent-color:var(--blue);display:none"> WebP</label>
+              </div>
+              <div id="qualityRow" class="hidden" style="margin-top:8px;">
+                <label class="form-label" style="margin-bottom:4px;">Quality: <span id="qualityVal">92</span>%</label>
+                <input type="range" id="qualitySlider" min="50" max="100" value="92" style="width:100%;accent-color:var(--blue)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Text -->
+          <div class="out-pane" id="pane-text">
+            <details style="border:1px solid var(--border-1);border-radius:8px;overflow:hidden;" open>
+              <summary style="padding:10px 14px;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;background:var(--bg-input);user-select:none;">
+                <span style="font-size:13px;font-weight:600;color:var(--text-2);">Extraction mode</span>
+                <svg style="width:14px;height:14px;transition:transform .2s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </summary>
+              <div style="padding:10px 12px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;gap:8px;">
+                  <label class="mode-card active" id="ext-auto" style="cursor:pointer;"><input type="radio" name="extractMode" value="auto" checked style="display:none;accent-color:var(--blue)"> Auto extract</label>
+                  <label class="mode-card" id="ext-custom" style="cursor:pointer;"><input type="radio" name="extractMode" value="custom" style="display:none;accent-color:var(--blue)"> Custom selectors</label>
+                </div>
+                <div id="autoFields" style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px;">
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="autoField" value="title"       checked style="accent-color:var(--blue)"> title</label>
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="autoField" value="description" checked style="accent-color:var(--blue)"> description</label>
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="autoField" value="h1"          checked style="accent-color:var(--blue)"> h1</label>
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="autoField" value="h2"          checked style="accent-color:var(--blue)"> h2</label>
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="autoField" value="paragraphs"  checked style="accent-color:var(--blue)"> paragraphs</label>
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="autoField" value="links"       checked style="accent-color:var(--blue)"> links</label>
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="autoField" value="images"      checked style="accent-color:var(--blue)"> images</label>
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="autoField" value="meta"        checked style="accent-color:var(--blue)"> meta</label>
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="autoField" value="bodyText"    checked style="accent-color:var(--blue)"> body text</label>
+                </div>
+                <div id="customSelectorSection" class="hidden" style="margin-top:4px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr auto auto auto;gap:6px;margin-bottom:4px;font-size:11px;color:var(--text-3);font-weight:600;">
+                    <span>Field</span><span>Selector</span><span>Attr</span><span>All</span><span></span>
+                  </div>
+                  <div id="selectorRows"></div>
+                  <button id="addSelectorRow" class="btn btn-secondary btn-sm" style="margin-top:6px;">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add field
+                  </button>
+                </div>
+              </div>
+            </details>
+            <div>
+              <label class="form-label">Output format</label>
+              <div style="display:flex;gap:8px;">
+                <label class="mode-card active" id="ofmt-json"     style="cursor:pointer;"><input type="radio" name="outputFormat" value="json"     checked style="display:none;accent-color:var(--blue)"> JSON</label>
+                <label class="mode-card"        id="ofmt-csv"      style="cursor:pointer;"><input type="radio" name="outputFormat" value="csv"           style="display:none;accent-color:var(--blue)"> CSV</label>
+                <label class="mode-card"        id="ofmt-md"       style="cursor:pointer;"><input type="radio" name="outputFormat" value="markdown"       style="display:none;accent-color:var(--blue)"> Markdown</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Videos -->
+          <div class="out-pane" id="pane-videos">
+            <div style="display:flex;gap:8px;">
+              <label class="mode-card active" id="vmode-frames" style="cursor:pointer;">
+                <div class="mode-card-title">
+                  <input type="radio" name="videoMode" value="frames" checked style="accent-color:var(--blue)">
+                  <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                  Frames (MP4)
+                </div>
+                <div class="mode-card-desc">Images stitched. Needs ffmpeg.</div>
+              </label>
+              <label class="mode-card" id="vmode-live" style="cursor:pointer;">
+                <div class="mode-card-title">
+                  <input type="radio" name="videoMode" value="live" style="accent-color:var(--blue)">
+                  <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                  Live (WebM)
+                </div>
+                <div class="mode-card-desc">Browser live. No ffmpeg.</div>
+              </label>
+            </div>
+            <div id="ffmpegStatus" style="font-size:12px;color:var(--text-3);">Checking ffmpeg…</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <div class="form-group" style="flex:1;min-width:120px;">
+                <label class="form-label">Seconds per slide</label>
+                <input type="number" id="videoDuration" value="3" min="1" max="30" class="form-control" style="height:34px;">
+              </div>
+              <div class="form-group" id="videoFpsGroup" style="flex:1;min-width:120px;">
+                <label class="form-label">Output FPS</label>
+                <select id="videoFps" class="form-control" style="height:34px;">
+                  <option value="24">24 fps</option>
+                  <option value="30" selected>30 fps</option>
+                  <option value="60">60 fps</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- PDF -->
+          <div class="out-pane" id="pane-pdf">
+            <p style="font-size:13px;color:var(--text-2);">Each slide becomes a landscape A4 page. Non-presentation pages generate a full-page PDF.</p>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="pdfAutoDetect" checked style="accent-color:var(--blue)"> Auto-detect slide presentations</label>
+          </div>
+
+          <!-- Bulk -->
+          <div class="out-pane" id="pane-bulk">
+            <p style="font-size:13px;color:var(--text-2);">Run all extractors in one pass for every URL.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="bulkImages" checked style="accent-color:var(--blue)"> Screenshots (PNG)</label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="bulkPdf"    checked style="accent-color:var(--blue)"> PDF</label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="bulkText"   checked style="accent-color:var(--blue)"> Scraped text (JSON)</label>
+            </div>
+          </div>
+
+          <!-- Structured Data -->
+          <div class="out-pane" id="pane-structured">
+            <p style="font-size:13px;color:var(--text-2);">Extract JSON-LD, Open Graph, schema.org, canonical and meta tags.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="sdJsonld"    checked style="accent-color:var(--blue)"> JSON-LD structured data</label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="sdOpengraph" checked style="accent-color:var(--blue)"> Open Graph tags</label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" id="sdMeta"      checked style="accent-color:var(--blue)"> Meta tags</label>
+            </div>
+            <div>
+              <label class="form-label">Output</label>
+              <div style="display:flex;gap:8px;">
+                <label class="mode-card active" id="sd-json" style="cursor:pointer;"><input type="radio" name="sdFormat" value="json" checked style="display:none;accent-color:var(--blue)"> JSON</label>
+                <label class="mode-card"        id="sd-csv"  style="cursor:pointer;"><input type="radio" name="sdFormat" value="csv"        style="display:none;accent-color:var(--blue)"> CSV</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monitor -->
+          <div class="out-pane" id="pane-monitor">
+            <div style="padding:20px;text-align:center;color:var(--text-3);">
+              <svg style="width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.35" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              <p style="font-size:14px;font-weight:600;color:var(--text-2);">Visual Monitor — Coming Soon</p>
+              <p style="font-size:13px;margin-top:6px;">Periodic screenshots compared for layout regressions.</p>
+            </div>
+          </div>
+
+          <!-- Narration -->
+          <div class="out-pane" id="pane-narration">
+            <p style="font-size:13px;color:var(--text-2);line-height:1.55;">Extracts <code style="font-size:11px;background:var(--bg-input);padding:1px 5px;border-radius:3px;">data-narration</code> text from each slide, generates MP3 audio via Edge TTS, and measures duration per slide.</p>
+            <div>
+              <label class="form-label">Narrator voice</label>
+              <select id="ttsVoice" class="form-control" style="height:38px;">
+                <option value="en-US-JennyNeural">Jenny — US, Female (Recommended)</option>
+                <option value="en-US-GuyNeural">Guy — US, Male</option>
+                <option value="en-US-AriaNeural">Aria — US, Female</option>
+                <option value="en-US-DavisNeural">Davis — US, Male</option>
+                <option value="en-US-AmberNeural">Amber — US, Female</option>
+                <option value="en-US-TonyNeural">Tony — US, Male</option>
+                <option value="en-GB-SoniaNeural">Sonia — GB, Female</option>
+                <option value="en-GB-RyanNeural">Ryan — GB, Male</option>
+                <option value="en-AU-NatashaNeural">Natasha — AU, Female</option>
+                <option value="en-AU-WilliamNeural">William — AU, Male</option>
+              </select>
+            </div>
+            <div style="padding:10px 12px;background:var(--bg-input);border:1px solid var(--border-1);border-radius:7px;font-size:12px;color:var(--text-3);line-height:1.55;">
+              <strong style="color:var(--text-2);">Edge TTS</strong> (Microsoft neural voices) — free, no API key required. Enter the presentation URL above. One MP3 file is generated per slide.
+            </div>
+          </div>
+
+          <!-- Lead Discovery Pane -->
+          <div class="out-pane" id="pane-leads">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div>
+                  <label class="form-label">Source</label>
+                  <select id="ldSource" class="form-control" style="height:38px;"></select>
+                  <div id="ldSourceDesc" style="font-size:11px;color:var(--text-3);margin-top:4px;line-height:1.45;"></div>
+                </div>
+                <div>
+                  <label class="form-label">Max results</label>
+                  <select id="ldMax" class="form-control" style="height:38px;"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option><option value="200">200</option><option value="500">500</option></select>
+                </div>
+              </div>
+              <div><label class="form-label">Search query</label><input id="ldQuery" class="form-control" placeholder="e.g. dentist, plumber, auto repair" style="height:38px;"></div>
+              <div><label class="form-label">Location</label><input id="ldLocation" class="form-control" placeholder="e.g. Austin TX, 78701" style="height:38px;"></div>
+              <button id="ldRunBtn" class="btn btn-primary" style="width:100%;">Discover Leads</button>
+              <div id="ldProgress" style="display:none;"><div class="ld-progress"><span id="ldProgressMsg">Starting...</span><div class="ld-progress-bar"><div class="ld-progress-fill" id="ldProgressFill" style="width:0%"></div></div><span id="ldProgressCount"></span></div></div>
+              <div id="ldResults" style="display:none;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                  <div style="font-size:13px;font-weight:600;color:var(--text-1);"><span id="ldCount">0</span> leads found &nbsp;<span id="ldSelCount" style="font-weight:400;color:var(--text-3);font-size:12px;"></span></div>
+                  <div style="display:flex;gap:8px;">
+                    <button id="ldSaveSelBtn" class="btn btn-secondary btn-sm" style="display:none;">Save Selected</button>
+                    <button id="ldSaveBtn" class="btn btn-secondary btn-sm">Save All to DataSet</button>
+                    <a href="/browser-studio/dataset.html" class="btn btn-secondary btn-sm" style="text-decoration:none;">Open DataSets</a>
+                  </div>
+                </div>
+                <div class="ld-table-wrap"><table class="ld-table"><thead><tr><th style="width:32px;text-align:center;"><input type="checkbox" id="ldCheckAll" style="accent-color:var(--blue);cursor:pointer;" title="Select all"></th><th>Company</th><th>Phone</th><th>City</th><th>Website</th><th>Category</th><th>Rating</th></tr></thead><tbody id="ldTableBody"></tbody></table></div>
+              </div>
+              <div id="ldError" style="display:none;color:#EF4444;font-size:13px;padding:10px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;"></div>
+            </div>
+          </div>
+
+          <div id="convertError" class="hidden" style="color:#EF4444;font-size:13px;padding:10px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;"></div>
+
+          <button id="runBtn" class="btn btn-primary" style="width:100%">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5,3 19,12 5,21 5,3"/></svg>
+            Extract Screenshots
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ CENTER: Status card ════════════════════════════════════════════ -->
+      <div class="card col-status">
+        <div class="card-header">
+          <h2>Status</h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span id="statusBadge" class="badge badge-blue" style="display:none">Running</span>
+            <button id="cancelBtn" class="btn btn-secondary btn-sm" style="display:none">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Cancel
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="idleMsg" style="padding:24px 0;text-align:center;color:var(--text-3);">
+            <svg style="width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5,3 19,12 5,21 5,3"/></svg>
+            <p style="font-size:14px">Choose a use case and click Run</p>
+          </div>
+          <div id="progressArea" class="hidden">
+            <div id="progressMsg" style="font-size:13px;color:#86EFAC;margin-bottom:8px;">Initialising…</div>
+            <div class="progress-bar-wrap"><div id="progressBar" class="progress-bar-fill" style="width:0%"></div></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--text-3);">
+              <span>Pool:</span>
+              <div id="livePoolDots" class="pool-dots" style="margin:0;"></div>
+              <span id="poolActivityLabel"></span>
+            </div>
+            <div id="urlStatusList" class="url-status"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ RIGHT: Ads + info panel ════════════════════════════════════════ -->
+      <aside class="col-ads" style="display:flex;flex-direction:column;gap:16px;">
+
+        <div class="ads-panel">
+          <div class="ads-panel-label">Sponsored</div>
+          <div id="adsContainer">
+            <div class="ads-empty">Loading…</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="ads-panel-label">Recent Jobs</div>
+          <div id="recentJobsPanel" style="display:flex;flex-direction:column;gap:5px;">
+            <div class="ads-empty" style="font-size:11px;padding:12px 10px;">No jobs run yet.</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="ads-panel-label" style="display:flex;align-items:center;justify-content:space-between;">Datasets <button id="newProjectBtn" class="dp-add-ds-btn">+ Project</button></div>
+          <div id="dpPanel"><div class="dp-empty">Loading...</div></div>
+        </div>
+
+        <div>
+          <div class="ads-panel-label">Tips</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div class="rp-tip"><strong>Bulk Capture</strong> runs screenshots + PDF + text in one browser pass — fastest for multi-format output.</div>
+            <div class="rp-tip"><strong>Proxy Rotation</strong> distributes requests across IPs. Add one proxy per line in round-robin mode.</div>
+            <div class="rp-tip"><strong>URLs are saved</strong> locally in your browser and restored on your next visit.</div>
+            <div class="rp-tip">Set the <strong>Pool size</strong> based on RAM — each Chromium uses ~350 MB.</div>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- ═══ Results span center cols ══════════════════════════════════════ -->
+      <div class="col-results">
+        <div id="resultsSection" class="job-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <h2 style="font-size:20px;font-weight:700" id="resultsTitle">Results</h2>
+              <p id="resultsStats" style="font-size:12px;color:var(--text-3);margin-top:2px;"></p>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;" id="resultsActions"></div>
+          </div>
+          <button id="clearResultsBtn" class="btn btn-secondary btn-sm" style="margin-bottom:14px;">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            Clear
+          </button>
+          <div id="resultsContainer"></div>
+        </div>
+      </div>
+
+    </div>
+    <!-- end .extractor-shell -->
+
+  </div>
+</div>
+
+<div id="toast-container" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:9999;"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const socket = io();
+  let currentJobId  = null;
+  let scraperJobId  = null;
+  let currentMode   = 'images';
+  let currentView   = 'grid';
+
+  const USE_CASES = {
+    images:     { title:'Extract Screenshots',  subtitle:'Capture images of each slide or full-page screenshot',              btn:'Extract Screenshots' },
+    text:       { title:'Scrape Text',          subtitle:'Extract text, headings, links and metadata from pages',             btn:'Scrape Text' },
+    videos:     { title:'Record Video',         subtitle:'Generate MP4 (frames) or live WebM recording',                     btn:'Record Video' },
+    pdf:        { title:'Generate PDF',         subtitle:'Landscape A4 PDF per slide or full-page PDF',                      btn:'Generate PDF' },
+    bulk:       { title:'Bulk Capture',         subtitle:'Screenshots + PDF + text in a single browser pass',                btn:'Start Bulk Capture' },
+    structured: { title:'Structured Data',      subtitle:'JSON-LD, Open Graph, schema.org and canonical links',              btn:'Extract Structured Data' },
+    monitor:    { title:'Visual Monitor',       subtitle:'Detect layout regressions over time — coming soon',                btn:'Start Monitor' },
+    narration:  { title:'Narration',            subtitle:'Generate TTS audio per slide using Edge TTS neural voices',          btn:'Generate Narration' },
+    leads:      { title:'Lead Discovery',       subtitle:'Search business directories and build a contact database',          btn:'Discover Leads' },
+  };
+
+  // DOM refs
+  const configTitle      = document.getElementById('configTitle');
+  const configSubtitle   = document.getElementById('configSubtitle');
+  const runBtn           = document.getElementById('runBtn');
+  const cancelBtn        = document.getElementById('cancelBtn');
+  const convertError     = document.getElementById('convertError');
+  const idleMsg          = document.getElementById('idleMsg');
+  const progressArea     = document.getElementById('progressArea');
+  const progressMsg      = document.getElementById('progressMsg');
+  const progressBar      = document.getElementById('progressBar');
+  const urlStatusList    = document.getElementById('urlStatusList');
+  const statusBadge      = document.getElementById('statusBadge');
+  const resultsSection   = document.getElementById('resultsSection');
+  const resultsContainer = document.getElementById('resultsContainer');
+  const resultsActions   = document.getElementById('resultsActions');
+  const clearResultsBtn  = document.getElementById('clearResultsBtn');
+  const livePoolDots     = document.getElementById('livePoolDots');
+  const poolActivityLabel= document.getElementById('poolActivityLabel');
+  const resultsTitle     = document.getElementById('resultsTitle');
+  const resultsStats     = document.getElementById('resultsStats');
+  const adsContainer     = document.getElementById('adsContainer');
+
+  // ── URL persistence via localStorage ─────────────────────────────────────
+  const urlsInput = document.getElementById('urlsInput');
+  const _savedUrls = localStorage.getItem('ba_last_urls');
+  if (_savedUrls) urlsInput.value = _savedUrls;
+  urlsInput.addEventListener('input', () => localStorage.setItem('ba_last_urls', urlsInput.value));
+
+  // ── Recent jobs tracker ───────────────────────────────────────────────────
+  const _recentJobs = [];
+  function recordJob(label, urlCount, status) {
+    _recentJobs.unshift({ label, urlCount, status, ts: new Date().toLocaleTimeString() });
+    if (_recentJobs.length > 5) _recentJobs.pop();
+    const el = document.getElementById('recentJobsPanel');
+    if (!el) return;
+    el.innerHTML = _recentJobs.map(j => `
+      <div class="rp-job">
+        <div class="rp-job-row">
+          <span class="rp-job-mode">${j.label}</span>
+          <span style="font-size:10px;color:${j.status==='done'?'#34d399':j.status==='error'?'#f87171':'var(--text-3)'}">${j.status}</span>
+        </div>
+        <div class="rp-job-meta">${j.urlCount} URL${j.urlCount!==1?'s':''} · ${j.ts}</div>
+      </div>`).join('');
+  }
+
+  // ── Load app config (branding + ads) ─────────────────────────────────────
+  async function loadAppConfig() {
+    try {
+      const _cfgResp = await fetch('/api/config');
+      if (!_cfgResp.ok) throw new Error(`${_cfgResp.status}`);
+      const cfg = await _cfgResp.json();
+      // Branding
+      if (cfg.appTitle) {
+        document.title = cfg.appTitle + ' — Extractor';
+        document.getElementById('navTitle').textContent = cfg.appTitle;
+      }
+      if (cfg.logoUrl) {
+        const img = document.getElementById('navLogo');
+        img.src = cfg.logoUrl;
+        img.style.display = '';
+      }
+      // Ads
+      const enabledAds = (cfg.ads || []).filter(a => a.enabled);
+      if (!enabledAds.length) {
+        adsContainer.innerHTML = '<div class="ads-empty">No ads configured.<br><a href="/admin.html" style="color:var(--blue-l);font-size:12px;">Add via Admin</a></div>';
+        return;
+      }
+      adsContainer.innerHTML = '';
+      enabledAds.forEach(ad => {
+        const card = document.createElement('div');
+        card.className = 'ad-card';
+        const imgHtml = ad.imageUrl
+          ? `<img class="ad-img" src="${ad.imageUrl}" alt="${ad.title}" onerror="this.parentElement.querySelector('.ad-img-placeholder').style.display='flex';this.style.display='none'">`
+          : '';
+        const placeholder = !ad.imageUrl
+          ? `<div class="ad-img-placeholder"><svg style="width:28px;height:28px;opacity:.3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`
+          : `<div class="ad-img-placeholder" style="display:none"><svg style="width:28px;height:28px;opacity:.3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`;
+        card.innerHTML = `
+          ${imgHtml}${placeholder}
+          <div class="ad-body">
+            <div class="ad-title">${ad.title}</div>
+            <div class="ad-desc">${ad.description}</div>
+            ${ad.link ? `<a href="${ad.link}" target="_blank" rel="noopener" class="ad-cta">
+              ${ad.cta || 'Learn More'}
+              <svg style="width:11px;height:11px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>` : ''}
+          </div>`;
+        adsContainer.appendChild(card);
+      });
+    } catch {
+      adsContainer.innerHTML = '<div class="ads-empty" style="font-size:11px;">Could not load ads.</div>';
+    }
+  }
+  loadAppConfig();
+
+  // ── Use-case sidebar ──────────────────────────────────────────────────────
+  document.querySelectorAll('.usecase-card').forEach(card => {
+    card.addEventListener('click', () => selectMode(card.dataset.mode));
+  });
+
+  function selectMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.usecase-card').forEach(c => c.classList.toggle('active', c.dataset.mode === mode));
+    document.querySelectorAll('.out-pane').forEach(p => p.classList.toggle('active', p.id === `pane-${mode}`));
+    const uc = USE_CASES[mode] || {};
+    configTitle.textContent    = uc.title    || mode;
+    configSubtitle.textContent = uc.subtitle || '';
+    runBtn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5,3 19,12 5,21 5,3"/></svg> ${uc.btn || 'Run'}`;
+    runBtn.style.display = mode === 'leads' ? 'none' : '';
+  }
+
+  // ── Browser pool ──────────────────────────────────────────────────────────
+  const concurrencySlider = document.getElementById('concurrency');
+  const concurrencyLabel  = document.getElementById('concurrencyLabel');
+  const poolDots          = document.getElementById('poolDots');
+
+  function renderDots(count, container) {
+    container.innerHTML = '';
+    for (let i = 0; i < Math.min(count, 16); i++) {
+      const d = document.createElement('div');
+      d.className = 'pool-dot';
+      container.appendChild(d);
+    }
+  }
+  concurrencySlider.addEventListener('input', () => {
+    concurrencyLabel.textContent = concurrencySlider.value;
+    renderDots(parseInt(concurrencySlider.value), poolDots);
+    checkResources();
+  });
+  renderDots(4, poolDots);
+
+  function setPoolDotsActive(active, total) {
+    livePoolDots.querySelectorAll('.pool-dot').forEach((d, i) => d.classList.toggle('active', i < active));
+    poolActivityLabel.textContent = `${active}/${total} active`;
+  }
+
+  // ── Resources ─────────────────────────────────────────────────────────────
+  const ramBar = document.getElementById('ramBar'), cpuBar = document.getElementById('cpuBar'), diskBar = document.getElementById('diskBar');
+  const ramLabel = document.getElementById('ramLabel'), cpuLabel = document.getElementById('cpuLabel'), diskLabel = document.getElementById('diskLabel');
+  const resourceWarn = document.getElementById('resourceWarn');
+
+  function pctColor(pct) { return pct < 60 ? 'var(--green)' : pct < 80 ? 'var(--yellow)' : 'var(--red)'; }
+
+  async function checkResources() {
+    try {
+      const r = await fetch('/api/resources').then(x => x.json());
+      const m = r.memory, c = r.cpu, d = r.disk;
+      ramBar.style.width  = m.usedPct + '%'; ramBar.style.background  = pctColor(m.usedPct); ramLabel.textContent  = `${m.usedGB}/${m.totalGB}GB`;
+      cpuBar.style.width  = c.loadPct + '%'; cpuBar.style.background  = pctColor(c.loadPct); cpuLabel.textContent  = `${c.loadPct}% (${c.cores}c)`;
+      if (d) { diskBar.style.width = d.usedPct + '%'; diskBar.style.background = pctColor(d.usedPct); diskLabel.textContent = `${d.freeGB}GB free`; }
+      const req = parseInt(concurrencySlider.value), safe = r.recommendedConcurrency;
+      resourceWarn.style.display = req > safe ? 'block' : 'none';
+      if (req > safe) resourceWarn.textContent = `System can safely run ${safe} browser(s) now. Pool will be capped.`;
+    } catch { /* offline */ }
+  }
+  checkResources();
+  setInterval(checkResources, 8000);
+  document.getElementById('refreshResBtn').addEventListener('click', checkResources);
+
+  // ── Proxy details ─────────────────────────────────────────────────────────
+  document.querySelector('details').addEventListener('toggle', function () {
+    document.getElementById('proxyChevron').style.transform = this.open ? 'rotate(180deg)' : '';
+  });
+  document.getElementById('proxyList').addEventListener('input', function () {
+    const n = this.value.trim().split('\n').filter(l => l.trim()).length;
+    document.getElementById('proxyCount').textContent = n > 0 ? `(${n})` : '';
+  });
+
+  // ── Image format ──────────────────────────────────────────────────────────
+  document.querySelectorAll('input[name="imgFormat"]').forEach(r => {
+    r.addEventListener('change', () => {
+      ['fmt-png','fmt-jpeg','fmt-webp'].forEach(id => document.getElementById(id).classList.remove('active'));
+      r.closest('label').classList.add('active');
+      document.getElementById('qualityRow').classList.toggle('hidden', r.value === 'png');
+    });
+  });
+  document.getElementById('qualitySlider').addEventListener('input', function () { document.getElementById('qualityVal').textContent = this.value; });
+
+  // ── Extract mode ──────────────────────────────────────────────────────────
+  document.querySelectorAll('input[name="extractMode"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const custom = r.value === 'custom';
+      document.getElementById('autoFields').style.display = custom ? 'none' : 'flex';
+      document.getElementById('customSelectorSection').classList.toggle('hidden', !custom);
+      document.getElementById('ext-auto').classList.toggle('active', !custom);
+      document.getElementById('ext-custom').classList.toggle('active', custom);
+    });
+  });
+  document.querySelectorAll('input[name="outputFormat"]').forEach(r => {
+    r.addEventListener('change', () => {
+      ['ofmt-json','ofmt-csv','ofmt-md'].forEach(id => document.getElementById(id).classList.remove('active'));
+      r.closest('label').classList.add('active');
+    });
+  });
+
+  // ── Video mode ────────────────────────────────────────────────────────────
+  function applyVideoMode(mode) {
+    document.getElementById('vmode-frames').classList.toggle('active', mode === 'frames');
+    document.getElementById('vmode-live').classList.toggle('active',   mode === 'live');
+    document.getElementById('videoFpsGroup').style.display = mode === 'live' ? 'none' : '';
+  }
+  document.querySelectorAll('input[name="videoMode"]').forEach(r => r.addEventListener('change', () => applyVideoMode(r.value)));
+
+  fetch('/api/slides/ffmpeg').then(r => r.json()).then(data => {
+    const el = document.getElementById('ffmpegStatus');
+    if (data.available) {
+      el.innerHTML = '<span style="color:#34d399">ffmpeg detected — Frames (MP4) and Live (WebM) available.</span>';
+    } else {
+      el.innerHTML = 'Live (WebM) available. <a href="https://ffmpeg.org/download.html" target="_blank" rel="noopener" style="color:var(--blue-l)">Install ffmpeg</a> for Frames (MP4).';
+      const fc = document.getElementById('vmode-frames');
+      fc.querySelector('input').disabled = true;
+      fc.style.opacity = '0.45'; fc.style.pointerEvents = 'none'; fc.classList.remove('active');
+      document.getElementById('vmode-live').querySelector('input').checked = true;
+      document.getElementById('vmode-live').classList.add('active');
+      applyVideoMode('live');
+    }
+  }).catch(() => { document.getElementById('ffmpegStatus').textContent = 'Could not check ffmpeg status.'; });
+
+  // ── Structured data format ────────────────────────────────────────────────
+  document.querySelectorAll('input[name="sdFormat"]').forEach(r => {
+    r.addEventListener('change', () => {
+      ['sd-json','sd-csv'].forEach(id => document.getElementById(id).classList.remove('active'));
+      r.closest('label').classList.add('active');
+    });
+  });
+
+  // ── Selector builder ──────────────────────────────────────────────────────
+  let selId = 0;
+  function addSelectorRow(name='', sel='', attr='text', multi=false) {
+    const id = ++selId;
+    const row = document.createElement('div');
+    row.className = 'sel-row'; row.id = `selrow-${id}`;
+    row.innerHTML = `
+      <input class="form-control" placeholder="field name" value="${name}" data-role="name" style="font-size:12px;padding:5px 8px">
+      <input class="form-control" placeholder="selector"   value="${sel}"  data-role="selector" style="font-size:12px;padding:5px 8px">
+      <select class="form-control" data-role="attribute" style="font-size:12px;padding:5px 8px">
+        <option value="text" ${attr==='text'?'selected':''}>text</option>
+        <option value="html" ${attr==='html'?'selected':''}>html</option>
+        <option value="href" ${attr==='href'?'selected':''}>href</option>
+        <option value="src"  ${attr==='src' ?'selected':''}>src</option>
+      </select>
+      <input type="checkbox" ${multi?'checked':''} data-role="multiple" style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
+      <button onclick="document.getElementById('selrow-${id}').remove()" class="btn btn-secondary btn-sm" style="padding:4px 8px;color:var(--red)">
+        <svg style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>`;
+    document.getElementById('selectorRows').appendChild(row);
+  }
+  document.getElementById('addSelectorRow').addEventListener('click', () => addSelectorRow());
+  addSelectorRow('title', 'h1', 'text', false);
+  addSelectorRow('desc', 'meta[name="description"]', 'content', false);
+
+  function getSelectors() {
+    return [...document.querySelectorAll('.sel-row')].map(r => ({
+      name:      r.querySelector('[data-role="name"]').value.trim(),
+      selector:  r.querySelector('[data-role="selector"]').value.trim(),
+      attribute: r.querySelector('[data-role="attribute"]').value,
+      multiple:  r.querySelector('[data-role="multiple"]').checked,
+    })).filter(s => s.name && s.selector);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function parseUrls() {
+    return document.getElementById('urlsInput').value.trim().split('\n')
+      .map(u => u.trim()).filter(Boolean)
+      .map(u => /^[A-Za-z]:[\\\/]/.test(u) ? 'file:///' + u.replace(/\\/g, '/') : u)
+      .filter(u => u.startsWith('http') || u.startsWith('file://'));
+  }
+  function getProxies() {
+    const raw = document.getElementById('proxyList').value.trim();
+    return raw ? raw.split('\n').map(p => p.trim()).filter(Boolean) : [];
+  }
+
+  // ── Run ───────────────────────────────────────────────────────────────────
+  runBtn.addEventListener('click', async () => {
+    const urls = parseUrls();
+    if (!urls.length) { showError('No valid URLs — enter http/https or local Windows paths (C:\\…)'); return; }
+    if (currentMode === 'monitor') { showError('Visual Monitor is coming soon.'); return; }
+    hideError();
+    setRunning(true);
+    urlStatusList.innerHTML = '';
+    resultsSection.classList.remove('visible');
+    resultsContainer.innerHTML = '';
+    resultsActions.innerHTML   = '';
+
+    const concurrency  = parseInt(concurrencySlider.value);
+    const outputFolder = document.getElementById('outputFolder').value.trim() || null;
+    const proxies      = getProxies();
+
+    if (currentMode === 'text' || currentMode === 'structured') {
+      await runScraper(urls, { concurrency, outputFolder, proxies });
+    } else if (currentMode === 'narration') {
+      await runNarration(urls[0], outputFolder);
+    } else {
+      await runSlides(urls, { concurrency, outputFolder, proxies });
+    }
+  });
+
+  // ── Slides ────────────────────────────────────────────────────────────────
+  async function runSlides(urls, { concurrency, outputFolder, proxies }) {
+    const [w, h] = document.getElementById('resolution').value.split('x').map(Number);
+    try {
+      const resp = await fetch('/api/slides/jobs', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          urls,
+          autoDetect:       currentMode === 'pdf' ? document.getElementById('pdfAutoDetect').checked : document.getElementById('autoDetect').checked,
+          fullPageFallback: currentMode === 'images' ? document.getElementById('fullPageFallback').checked : true,
+          width: w, height: h, outputFolder,
+          format:        document.querySelector('input[name="imgFormat"]:checked')?.value || 'png',
+          quality:       parseInt(document.getElementById('qualitySlider').value),
+          saveImages:    currentMode === 'images' || currentMode === 'bulk',
+          generatePdf:   currentMode === 'pdf'    || currentMode === 'bulk',
+          generateVideo: currentMode === 'videos',
+          videoDuration: parseInt(document.getElementById('videoDuration').value),
+          videoFps:      parseInt(document.getElementById('videoFps').value),
+          videoMode:     document.querySelector('input[name="videoMode"]:checked')?.value || 'live',
+        })
+      });
+      let data;
+      try { data = await resp.json(); } catch { throw new Error(`Server error (${resp.status})`); }
+      if (!resp.ok) throw new Error(data?.error || `Server error (${resp.status})`);
+      currentJobId = data.id; scraperJobId = null;
+      socket.emit('join:slides', data.id);
+      progressMsg.textContent = `Started — ${urls.length} URL(s)`;
+      renderUrlRows(urls); renderLivePool(Math.min(concurrency, 4));
+    } catch (err) { showError(err.message); setRunning(false); recordJob(USE_CASES[currentMode]?.title || currentMode, urls.length, 'error'); }
+  }
+
+  // ── Scraper ───────────────────────────────────────────────────────────────
+  async function runScraper(urls, { concurrency, outputFolder, proxies }) {
+    const isStructured = currentMode === 'structured';
+    const extractMode  = isStructured ? 'auto' : (document.querySelector('input[name="extractMode"]:checked')?.value || 'auto');
+    const outputFormat = isStructured
+      ? (document.querySelector('input[name="sdFormat"]:checked')?.value || 'json')
+      : (document.querySelector('input[name="outputFormat"]:checked')?.value || 'json');
+    const selectors    = extractMode === 'custom' ? getSelectors() : null;
+    // For structured mode pass which schema types are requested as metadata
+    const sdTypes = isStructured ? {
+      jsonld:    document.getElementById('sdJsonld')?.checked    ?? true,
+      opengraph: document.getElementById('sdOpengraph')?.checked ?? true,
+      meta:      document.getElementById('sdMeta')?.checked      ?? true,
+    } : null;
+    try {
+      const resp = await fetch('/api/scraper/jobs', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls, concurrency, selectors, proxies, outputFolder, outputFormat, sdTypes })
+      });
+      let data;
+      try { data = await resp.json(); } catch { throw new Error(`Server error (${resp.status})`); }
+      if (!resp.ok) throw new Error(data?.error || `Server error (${resp.status})`);
+      scraperJobId = data.id; currentJobId = null;
+      socket.emit('join:scraper', data.id);
+      progressMsg.textContent = `Scraping ${urls.length} URL(s)…`;
+      renderUrlRows(urls); renderLivePool(concurrency);
+    } catch (err) { showError(err.message); setRunning(false); recordJob(USE_CASES[currentMode]?.title || currentMode, urls.length, 'error'); }
+  }
+
+  function renderLivePool(size) { renderDots(size, livePoolDots); }
+
+  // ── Socket events ─────────────────────────────────────────────────────────
+  socket.on('slides-progress', evt => {
+    if (evt.jobId !== currentJobId) return;
+    if (evt.type === 'url-start')   { updateRow(evt.url, 'running', 'Opening…'); progressMsg.textContent = `Processing: ${trunc(evt.url, 50)}`; }
+    if (evt.type === 'slide-done')  { updateRow(evt.url, 'running', `slide ${evt.slideIndex}/${evt.slideTotal}`); }
+    if (evt.type === 'pdf-start')   { updateRow(evt.url, 'running', 'PDF…'); }
+    if (evt.type === 'video-start') { updateRow(evt.url, 'running', 'Recording…'); }
+    if (evt.type === 'url-done')    { updateRow(evt.url, 'complete', evt.savedTo || `${evt.slideCount}s`); setProgress(evt.completed, evt.total); }
+    if (evt.type === 'url-error')   { updateRow(evt.url, 'error',   evt.error); setProgress(evt.completed, evt.total); }
+    if (evt.type === 'done')        { setRunning(false); setProgress(1,1); loadSlidesResults(currentJobId); recordJob(USE_CASES[currentMode]?.title || currentMode, evt.total || 0, 'done'); }
+  });
+
+  socket.on('scraper-progress', evt => {
+    if (evt.jobId !== scraperJobId) return;
+    if (evt.type === 'url-start')  { updateRow(evt.url, 'running', `B${(evt.workerId||0)+1}`); setPoolDotsActive(evt.active||1, evt.poolSize||1); }
+    if (evt.type === 'url-done')   { updateRow(evt.url, 'complete', trunc(evt.result?.title||'✓', 36)); setProgress(evt.completed, evt.total); }
+    if (evt.type === 'url-error')  { updateRow(evt.url, 'error', evt.error); setProgress(evt.completed, evt.total); }
+    if (evt.type === 'done')       { setRunning(false); setProgress(1,1); loadScraperResults(scraperJobId); recordJob(USE_CASES[currentMode]?.title || currentMode, evt.total || 0, 'done'); }
+  });
+
+  socket.on('tts-video', evt => {
+    if (!ttsJobId || evt.jobId !== ttsJobId) return;
+    const box = document.getElementById('videoStatusBox');
+    const btn = document.getElementById('genVideoBtn');
+    if (!box) return;
+    if (evt.status === 'running') {
+      box.style.display = 'block';
+      box.innerHTML = `
+        <span style="display:flex;align-items:center;gap:8px;">
+          <svg style="width:13px;height:13px;animation:spin 1s linear infinite;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+          <span style="color:var(--text-2);">${evt.step}</span>
+        </span>`;
+    } else if (evt.status === 'done') {
+      box.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <span style="color:#34d399;display:flex;align-items:center;gap:6px;">
+            <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+            Narrated video ready
+          </span>
+          <a href="${evt.videoUrl}" class="btn btn-secondary btn-sm" style="color:var(--blue-l);border-color:rgba(59,130,246,.4);">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download MP4
+          </a>
+        </div>`;
+      if (btn) { btn.disabled = false; btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23,7 16,12 23,17 23,7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Regenerate Video`; }
+    } else if (evt.status === 'error') {
+      box.innerHTML = `<span style="color:#f87171;">Video error: ${evt.error || 'unknown'}</span>`;
+      if (btn) { btn.disabled = false; btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23,7 16,12 23,17 23,7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Retry Video`; }
+    }
+  });
+
+  cancelBtn.addEventListener('click', async () => {
+    if (!scraperJobId) return;
+    await fetch(`/api/scraper/jobs/${scraperJobId}/cancel`, { method: 'POST' }).catch(()=>{});
+    cancelBtn.style.display = 'none';
+  });
+
+  // ── Narration (Edge TTS) ──────────────────────────────────────────────────
+  let ttsJobId = null;
+
+  async function runNarration(url, outputFolder) {
+    const voice = document.getElementById('ttsVoice')?.value || 'en-US-JennyNeural';
+    ttsJobId = null;
+    progressMsg.textContent = 'Connecting to Edge TTS…';
+    renderUrlRows([url]);
+    try {
+      const resp = await fetch('/api/tts/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, voice, outputFolder }),
+      });
+      let data;
+      try { data = await resp.json(); } catch { throw new Error(`Server error (${resp.status})`); }
+      if (!resp.ok) throw new Error(data?.error || `Server error (${resp.status})`);
+      ttsJobId = data.jobId;
+      socket.emit('join:tts', ttsJobId);
+      progressMsg.textContent = 'Extracting narrations and generating audio…';
+    } catch (err) { showError(err.message); setRunning(false); recordJob('Narration', 0, 'error'); }
+  }
+
+  socket.on('tts-progress', evt => {
+    if (!ttsJobId || evt.jobId !== ttsJobId) return;
+    if (evt.type === 'slide') {
+      progressMsg.textContent = `Slide ${evt.slide} — ${evt.duration ? evt.duration.toFixed(1)+'s' : 'generating…'}`;
+      setProgress(evt.slide, evt.total || evt.slide);
+    }
+    if (evt.type === 'done') {
+      setRunning(false); setProgress(1, 1);
+      loadTtsResults(ttsJobId);
+      recordJob('Narration', evt.total || 0, 'done');
+    }
+    if (evt.type === 'error') {
+      setRunning(false);
+      showError(evt.error || 'TTS generation failed');
+      recordJob('Narration', 0, 'error');
+    }
+  });
+
+  async function loadTtsResults(jobId) {
+    try {
+      const resp = await fetch(`/api/tts/jobs/${jobId}`);
+      if (!resp.ok) throw new Error(`Server ${resp.status}`);
+      const data = await resp.json();
+      resultsTitle.textContent = 'Narration Audio';
+      const slides = data.slides || [];
+      const totalDur = slides.reduce((a, s) => a + (s.duration || 0), 0);
+      resultsStats.textContent = `${slides.length} slides · ${totalDur.toFixed(1)}s total`;
+      resultsActions.innerHTML = `
+        <a id="dlAllAudio" href="/api/tts/jobs/${jobId}/download" download="narration.zip" class="btn btn-secondary btn-sm">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download All (ZIP)
+        </a>
+        <button id="genVideoBtn" class="btn btn-secondary btn-sm" style="color:var(--blue-l);border-color:rgba(59,130,246,.4);">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23,7 16,12 23,17 23,7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          Generate Video
+        </button>`;
+
+      // ── video generation ──────────────────────────────────────────────────
+      // inject a status row below the actions bar
+      let videoStatusBox = document.getElementById('videoStatusBox');
+      if (!videoStatusBox) {
+        videoStatusBox = document.createElement('div');
+        videoStatusBox.id = 'videoStatusBox';
+        videoStatusBox.style.cssText = 'display:none;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border-1);border-radius:8px;font-size:12px;color:var(--text-2);';
+        // insert immediately after resultsActions inside its parent
+        resultsActions.parentNode.insertBefore(videoStatusBox, resultsActions.nextSibling);
+      }
+      videoStatusBox.style.display = 'none';
+
+      document.getElementById('genVideoBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('genVideoBtn');
+        btn.disabled = true;
+        btn.textContent = 'Starting…';
+        videoStatusBox.style.display = 'block';
+        videoStatusBox.innerHTML = `<span style="color:var(--text-3);">Initialising video generation…</span>`;
+        const urlVal = document.getElementById('urlsInput').value.trim().split('\n')[0].trim();
+        const reqUrl = /^[A-Za-z]:[\\\/]/.test(urlVal) ? 'file:///' + urlVal.replace(/\\/g, '/') : urlVal;
+        try {
+          const r = await fetch(`/api/tts/jobs/${jobId}/video`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: reqUrl }),
+          });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error || `Server ${r.status}`);
+        } catch (err) {
+          videoStatusBox.innerHTML = `<span style="color:#f87171;">Error: ${err.message}</span>`;
+          btn.disabled = false;
+          btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23,7 16,12 23,17 23,7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Generate Video`;
+        }
+      });
+      if (!slides.length) {
+        resultsContainer.innerHTML = '<p style="color:var(--text-3);padding:16px;">No data-narration slides found in this page.</p>';
+        resultsSection.classList.add('visible'); return;
+      }
+      resultsContainer.innerHTML = '';
+      const list = document.createElement('div');
+      list.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+      slides.forEach(s => {
+        const item = document.createElement('div');
+        item.style.cssText = 'background:var(--bg-input);border:1px solid var(--border-1);border-radius:8px;padding:12px 14px;';
+        const dur = s.duration ? s.duration.toFixed(2) + 's' : 'n/a';
+        const audioSrc = s.audioUrl || '';
+        item.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:700;color:var(--text-2);">Slide ${s.slide}</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;color:var(--blue);">${dur}</span>
+              ${audioSrc ? `<a href="${audioSrc}" download="slide-${s.slide}.mp3" style="font-size:11px;color:var(--text-3);text-decoration:none;border:1px solid var(--border-1);border-radius:4px;padding:2px 7px;" title="Download MP3">
+                <svg style="width:11px;height:11px;vertical-align:-1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </a>` : ''}
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;line-height:1.5;">${trunc(s.narration||'',120)}</div>
+          ${audioSrc
+            ? `<audio controls style="width:100%;height:32px;accent-color:var(--blue);" src="${audioSrc}" preload="none"></audio>`
+            : '<div style="font-size:11px;color:#f87171;">Audio generation failed</div>'}`;
+        list.appendChild(item);
+      });
+      resultsContainer.appendChild(list);
+      resultsSection.classList.add('visible');
+    } catch (err) { toast('Failed to load narration results: ' + err.message, 'error'); }
+  }
+
+  // ── Results: slides ───────────────────────────────────────────────────────
+  async function loadSlidesResults(jobId) {
+    try {
+      const _imgResp = await fetch(`/api/slides/jobs/${jobId}/images`);
+      if (!_imgResp.ok) throw new Error(`Server ${_imgResp.status}`);
+      const data = await _imgResp.json();
+      if (!data.sources?.length) {
+        resultsContainer.innerHTML = '<p style="color:var(--text-3);padding:16px;text-align:center;">No output generated.</p>';
+        resultsSection.classList.add('visible'); return;
+      }
+      resultsTitle.textContent = 'Results';
+      resultsActions.innerHTML = `
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="grid" title="Grid"><svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+          <button class="view-btn" data-view="small" title="Small"><svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="4" height="4"/><rect x="10" y="2" width="4" height="4"/><rect x="18" y="2" width="4" height="4"/><rect x="2" y="10" width="4" height="4"/></svg></button>
+          <button class="view-btn" data-view="large" title="Large"><svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg></button>
+          <button class="view-btn" data-view="list" title="List"><svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg></button>
+        </div>
+        <button id="dlAllBtn" class="btn btn-secondary">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          ZIP All
+        </button>`;
+      document.getElementById('dlAllBtn').onclick = () => { window.location.href = `/api/slides/jobs/${jobId}/download/all`; };
+      resultsActions.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentView = btn.dataset.view;
+          resultsActions.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b === btn));
+          document.querySelectorAll('.slides-grid').forEach(g => applyView(g));
+        });
+      });
+      resultsContainer.innerHTML = '';
+      data.sources.forEach(src => {
+        const group = document.createElement('div');
+        group.className = 'source-group';
+        const typeTag = src.isPresentation
+          ? `<span class="type-badge type-presentation">Presentation · ${src.images?.length||0} slides</span>`
+          : `<span class="type-badge type-page">Page</span>`;
+        const dlBtns = [
+          `<a href="/api/slides/jobs/${jobId}/download/${src.sourceIndex}" class="btn btn-secondary btn-sm">ZIP</a>`,
+          src.hasPdf   ? `<a href="/api/slides/jobs/${jobId}/pdf/${src.sourceIndex}"   class="btn btn-secondary btn-sm" style="color:#f87171;border-color:rgba(239,68,68,.35)" download>PDF</a>` : '',
+          src.hasVideo ? `<a href="/api/slides/jobs/${jobId}/video/${src.sourceIndex}" class="btn btn-secondary btn-sm" style="color:#a78bfa;border-color:rgba(139,92,246,.35)" download>${src.videoMime==='video/webm'?'WebM':'MP4'}</a>` : '',
+        ].join('');
+        group.innerHTML = `
+          <div class="source-group-header">
+            <div class="source-group-title">
+              <svg style="width:14px;height:14px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+              <span class="source-group-url" title="${src.url}">${trunc(src.url, 70)}</span>
+              ${typeTag}
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;margin-left:12px;">${dlBtns}</div>
+          </div>
+          <div class="source-group-body">
+            ${src.images?.length > 0 ? `<div class="slides-grid view-grid" id="grid-${src.sourceIndex}"></div>` : '<p style="color:var(--text-3);font-size:13px;">No images.</p>'}
+          </div>`;
+        resultsContainer.appendChild(group);
+        if (src.images?.length > 0) {
+          const grid = group.querySelector(`#grid-${src.sourceIndex}`);
+          src.images.forEach((img, idx) => {
+            const t = document.createElement('div');
+            t.className = 'slide-thumb';
+            t.innerHTML = `
+              <img src="/api/slides/jobs/${jobId}/image/${src.sourceIndex}/${idx}" loading="lazy" alt="${img.filename}">
+              <div class="slide-thumb-meta">
+                <span class="slide-thumb-name">${img.filename}</span>
+                <a href="/api/slides/jobs/${jobId}/image/${src.sourceIndex}/${idx}" download="${img.filename}" class="slide-thumb-dl" title="Download">
+                  <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </a>
+              </div>`;
+            grid.appendChild(t);
+          });
+        }
+      });
+      resultsSection.classList.add('visible');
+    } catch (err) { toast('Failed to load results: ' + err.message, 'error'); }
+  }
+
+  function applyView(grid) { grid.className = `slides-grid view-${currentView}`; }
+
+  // ── Results: scraper ──────────────────────────────────────────────────────
+  async function loadScraperResults(jobId) {
+    try {
+      const _jobResp = await fetch(`/api/scraper/jobs/${jobId}`);
+      if (!_jobResp.ok) throw new Error(`Server ${_jobResp.status}`);
+      const data = await _jobResp.json();
+      resultsTitle.textContent = 'Scraped Data';
+      const st = data.stats || {};
+      resultsStats.textContent = `${st.done||0} scraped · ${st.errors||0} errors · ${st.total||0} total`;
+      let _scrapeSelectedRows = new Set();
+      resultsActions.innerHTML = `
+        <button id="dlJson" class="btn btn-secondary btn-sm">JSON</button>
+        <button id="dlCsv"  class="btn btn-secondary btn-sm">CSV</button>
+        <button id="dlMd"   class="btn btn-secondary btn-sm">Markdown</button>
+        <button id="scrSaveSelBtn" class="btn btn-secondary btn-sm" style="display:none;">Save Selected to Dataset</button>
+        <button id="scrSaveAllBtn" class="btn btn-secondary btn-sm">Save All to Dataset</button>`;
+      document.getElementById('dlJson').onclick = () => { window.location.href = `/api/scraper/jobs/${jobId}/download/json`; };
+      document.getElementById('dlCsv').onclick  = () => { window.location.href = `/api/scraper/jobs/${jobId}/download/csv`; };
+      document.getElementById('dlMd').onclick   = () => { window.location.href = `/api/scraper/jobs/${jobId}/download/markdown`; };
+      const results = data.results || [];
+      function scrapeToRecord(r) {
+        return { url: r.url, title: r.title || '', fields: { description: r.description, h1: Array.isArray(r.h1) ? r.h1.join(' | ') : r.h1, linkCount: Array.isArray(r.links) ? r.links.length : 0, imageCount: Array.isArray(r.images) ? r.images.length : 0 }, rawText: (r.bodyText||'').slice(0, 5000), tags: [r.status||''], capturedAt: new Date().toISOString() };
+      }
+      document.getElementById('scrSaveAllBtn').onclick = () => { if (results.length) openSaveToDatasetModal(results.map(scrapeToRecord), 'Web Extractor'); };
+      document.getElementById('scrSaveSelBtn').onclick = () => {
+        const sel = results.filter((_, i) => _scrapeSelectedRows.has(i)).map(scrapeToRecord);
+        if (sel.length) openSaveToDatasetModal(sel, 'Web Extractor (selected)');
+      };
+      if (!results.length) { resultsContainer.innerHTML = '<p style="color:var(--text-3);padding:16px;">No results.</p>'; resultsSection.classList.add('visible'); return; }
+      const cols = ['url','status','title','description','h1','links','images'];
+      const wrap = document.createElement('div'); wrap.className = 'scrape-table-wrap';
+      const table = document.createElement('table'); table.className = 'scrape-table';
+      table.innerHTML = `<thead><tr><th style="width:28px;"><input type="checkbox" id="scrSelAll" title="Select all"></th>${cols.map(c=>`<th>${c}</th>`).join('')}<th></th></tr></thead>`;
+      const tbody = document.createElement('tbody');
+      document.getElementById('scrSelAll').addEventListener('change', function() {
+        const checked = this.checked;
+        _scrapeSelectedRows.clear();
+        tbody.querySelectorAll('input[type=checkbox]').forEach((cb, i) => { cb.checked = checked; if (checked) _scrapeSelectedRows.add(i); });
+        document.getElementById('scrSaveSelBtn').style.display = _scrapeSelectedRows.size ? '' : 'none';
+      });
+      results.forEach((r, rowIdx) => {
+        const tr = document.createElement('tr');
+        const v_url = r['url'] || '';
+        const isFile = v_url.startsWith('file:') || /^[A-Za-z]:\\/.test(v_url);
+        const fileHref = isFile ? 'file:///' + v_url.replace(/\\/g, '/').replace(/^file:\/\/\//, '') : v_url;
+        const openLink = `<a href="${fileHref}" target="_blank" style="margin-left:6px;font-size:11px;color:var(--blue);text-decoration:none;white-space:nowrap;opacity:0.8;" title="Open">open</a>`;
+        const cb = document.createElement('td');
+        cb.innerHTML = `<input type="checkbox" data-row="${rowIdx}">`;
+        cb.querySelector('input').addEventListener('change', function() {
+          if (this.checked) _scrapeSelectedRows.add(rowIdx); else _scrapeSelectedRows.delete(rowIdx);
+          document.getElementById('scrSaveSelBtn').style.display = _scrapeSelectedRows.size ? '' : 'none';
+        });
+        tr.appendChild(cb);
+        const cells = cols.map(c => {
+          const v = r[c];
+          if (c==='url')    return `<td class="url-cell" title="${v}">${trunc(v,42)}${openLink}</td>`;
+          if (c==='status') return `<td class="${v==='ok'?'ok':'err'}">${v}</td>`;
+          if (Array.isArray(v)) return `<td>${v.length} items</td>`;
+          if (typeof v==='object'&&v!==null) return `<td>${Object.keys(v).length} fields</td>`;
+          return `<td title="${v||''}">${trunc(String(v||''),70)}</td>`;
+        }).join('') + `<td><button class="scrape-preview-btn" data-row="${rowIdx}" style="background:none;border:1px solid var(--border-1);border-radius:4px;cursor:pointer;color:var(--text-3);font-size:11px;padding:2px 7px;white-space:nowrap;" title="Preview content">Preview</button></td>`;
+        tr.insertAdjacentHTML('beforeend', cells);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody); wrap.appendChild(table);
+      resultsContainer.innerHTML = ''; resultsContainer.appendChild(wrap);
+      // preview modal
+      wrap.querySelectorAll('.scrape-preview-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const r = results[+btn.dataset.row];
+          const body = r.bodyText ? String(r.bodyText).slice(0, 2000) : '';
+          const links = Array.isArray(r.links) ? r.links.slice(0, 10).join('\n') : '';
+          const rows = [
+            ['URL', r.url || ''],
+            ['Status', r.status || ''],
+            ['Title', r.title || ''],
+            ['Description', r.description || ''],
+            ['H1', Array.isArray(r.h1) ? r.h1.join(' | ') : (r.h1 || '')],
+            ['Links', links + (Array.isArray(r.links) && r.links.length > 10 ? `\n…+${r.links.length-10} more` : '')],
+            ['Body text', body + (body.length===2000 ? '…' : '')],
+          ];
+          const existing = document.getElementById('scrapePreviewModal');
+          if (existing) existing.remove();
+          const modal = document.createElement('div');
+          modal.id = 'scrapePreviewModal';
+          modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:24px;';
+          modal.innerHTML = `
+            <div style="background:var(--bg-panel);border:1px solid var(--border-1);border-radius:12px;max-width:720px;width:100%;max-height:80vh;overflow-y:auto;padding:24px;position:relative;">
+              <button id="scrapePreviewClose" style="position:absolute;top:12px;right:14px;background:none;border:none;cursor:pointer;color:var(--text-3);font-size:20px;line-height:1;">&#x2715;</button>
+              <div style="font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:16px;">Scraped Content Preview</div>
+              ${rows.map(([k,v])=>v?`<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);margin-bottom:3px;">${k}</div><div style="font-size:12.5px;color:var(--text-2);white-space:pre-wrap;word-break:break-word;background:var(--bg-input);border-radius:6px;padding:8px 10px;border:1px solid var(--border-0);">${v}</div></div>`:''). join('')}
+            </div>`;
+          document.body.appendChild(modal);
+          modal.querySelector('#scrapePreviewClose').onclick = () => modal.remove();
+          modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
+        });
+      });
+      resultsSection.classList.add('visible');
+    } catch (err) { toast('Failed to load scraper results: ' + err.message, 'error'); }
+  }
+
+  clearResultsBtn.addEventListener('click', () => {
+    resultsSection.classList.remove('visible');
+    resultsContainer.innerHTML = ''; resultsActions.innerHTML = ''; resultsStats.textContent = '';
+    currentJobId = scraperJobId = null;
+  });
+
+  // ── URL row helpers ───────────────────────────────────────────────────────
+  const urlRowMap = new Map();
+
+  function renderUrlRows(urls) {
+    urlRowMap.clear(); urlStatusList.innerHTML = '';
+    urls.slice(0, 80).forEach(u => {
+      const row = document.createElement('div'); row.className = 'url-row';
+      row.innerHTML = `<div class="url-text" title="${u}">${trunc(u,48)}</div><span class="badge badge-blue url-badge">Queued</span><span class="url-count"></span>`;
+      urlStatusList.appendChild(row); urlRowMap.set(u, row);
+    });
+    if (urls.length > 80) {
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:12px;color:var(--text-3);padding:6px 14px;';
+      note.textContent = `…and ${urls.length-80} more`;
+      urlStatusList.appendChild(note);
+    }
+  }
+
+  function updateRow(url, status, label) {
+    const row = urlRowMap.get(url); if (!row) return;
+    const b = row.querySelector('.url-badge'), c = row.querySelector('.url-count');
+    b.className = `badge ${status==='complete'?'badge-green':status==='error'?'badge-red':'badge-blue'} url-badge`;
+    b.textContent = status==='complete'?'Done':status==='error'?'Error':'Running';
+    c.textContent = label || '';
+  }
+
+  function setProgress(done, total) { progressBar.style.width = total > 0 ? Math.round(done/total*100)+'%' : '0%'; }
+
+  function setRunning(on) {
+    idleMsg.classList.toggle('hidden', true);
+    progressArea.classList.toggle('hidden', !on);
+    statusBadge.style.display = on ? '' : 'none';
+    statusBadge.className = on ? 'badge badge-blue' : 'badge badge-green';
+    statusBadge.textContent = on ? 'Running' : 'Done';
+    cancelBtn.style.display = on && scraperJobId ? '' : 'none';
+    runBtn.disabled = on;
+  }
+
+  function showError(msg) { convertError.textContent = msg; convertError.classList.remove('hidden'); }
+  function hideError()    { convertError.classList.add('hidden'); }
+  function trunc(s, n)    { return s && s.length > n ? s.slice(0,n)+'…' : (s||''); }
+
+  function toast(msg, type='info') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span class="toast-msg">${msg}</span><button class="toast-close" onclick="this.parentElement.remove()">✕</button>`;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 4500);
+  }
+})();
+
+  // ── Lead Discovery ────────────────────────────────────────────────────────
+
+  (function initLeads() {
+    const ldSocket      = io();
+    const ldSource      = document.getElementById('ldSource');
+    const ldMax         = document.getElementById('ldMax');
+    const ldQuery       = document.getElementById('ldQuery');
+    const ldLocation    = document.getElementById('ldLocation');
+    const ldRunBtn      = document.getElementById('ldRunBtn');
+    const ldProgress    = document.getElementById('ldProgress');
+    const ldProgressMsg = document.getElementById('ldProgressMsg');
+    const ldProgressFill= document.getElementById('ldProgressFill');
+    const ldProgressCount = document.getElementById('ldProgressCount');
+    const ldResults     = document.getElementById('ldResults');
+    const ldCount       = document.getElementById('ldCount');
+    const ldTableBody   = document.getElementById('ldTableBody');
+    const ldSaveBtn     = document.getElementById('ldSaveBtn');
+    const ldError       = document.getElementById('ldError');
+
+    let ldRecords = [];
+    let ldRunId   = null;
+
+    // Load pipeline sources
+    async function loadSources() {
+      try {
+        const r = await fetch('/api/pipeline/sources');
+        if (!r.ok) {
+          ldSource.innerHTML = '<option value="">Error ' + r.status + ' loading sources</option>';
+          return;
+        }
+        const sources = await r.json();
+        const htmlSources = sources.filter(s => s.type === 'html' || !s.type);
+        const apiSources  = sources.filter(s => s.type === 'api');
+        let opts = '';
+        if (htmlSources.length) {
+          opts += '<optgroup label="Free — No API Key">' +
+            htmlSources.map(s => `<option value="${s.id}">${s.name}</option>`).join('') +
+            '</optgroup>';
+        }
+        if (apiSources.length) {
+          opts += '<optgroup label="API Key Required">' +
+            apiSources.map(s => `<option value="${s.id}">${s.name}</option>`).join('') +
+            '</optgroup>';
+        }
+        ldSource.innerHTML = opts || '<option value="">No sources available</option>';
+
+        // Show description of selected source
+        ldSource.addEventListener('change', function() {
+          const src = sources.find(s => s.id === this.value);
+          const desc = document.getElementById('ldSourceDesc');
+          if (desc) desc.textContent = src ? (src.description || '') : '';
+        });
+        ldSource.dispatchEvent(new Event('change'));
+      } catch(e) {
+        ldSource.innerHTML = '<option value="">Failed to load sources</option>';
+      }
+    }
+
+    // Auth helper
+    function authHeaders() {
+      const token = localStorage.getItem('studioToken');
+      return token ? { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+    }
+
+    // Render table row
+    function renderRow(rec, idx) {
+      const name     = rec.company?.name || '';
+      const phone    = rec.contact?.phone || '';
+      const city     = rec.contact?.address?.city || '';
+      const web      = rec.contact?.website || rec.meta?.sourceUrl || '';
+      const cat      = rec.company?.category || '';
+      const rating   = rec.signals?.rating || '';
+      const webShort = web ? web.replace(/^https?:\/\//, '').split('/')[0] : '';
+      return `<tr data-idx="${idx}">
+        <td style="width:32px;text-align:center;"><input type="checkbox" class="ld-row-check" data-idx="${idx}" style="accent-color:var(--blue);cursor:pointer;"></td>
+        <td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</td>
+        <td style="white-space:nowrap;">${phone}</td>
+        <td>${city}</td>
+        <td>${web ? `<a href="${web}" target="_blank" rel="noopener" style="color:var(--blue-l);text-decoration:none;">${webShort}</a>` : ''}</td>
+        <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cat}</td>
+        <td>${rating || ''}</td>
+      </tr>`;
+    }
+
+    // Run pipeline
+    ldRunBtn.addEventListener('click', async () => {
+      const sourceId = ldSource.value;
+      const query    = ldQuery.value.trim();
+      const location = ldLocation.value.trim();
+      if (!sourceId) { showLdError('Select a source.'); return; }
+      if (!query)    { showLdError('Enter a search query.'); return; }
+      if (!location) { showLdError('Enter a location.'); return; }
+
+      ldError.style.display = 'none';
+      ldResults.style.display = 'none';
+      ldProgress.style.display = 'block';
+      ldProgressMsg.textContent = 'Starting pipeline...';
+      ldProgressFill.style.width = '0%';
+      ldProgressCount.textContent = '';
+      ldRunBtn.disabled = true;
+      ldRecords = [];
+      // Reset selection UI for new run
+      if (ldCheckAll)   ldCheckAll.checked = false;
+      if (ldSaveSelBtn) ldSaveSelBtn.style.display = 'none';
+      if (ldSelCount)   ldSelCount.textContent = '';
+
+      try {
+        const r = await fetch('/api/pipeline/run', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ sourceId, query, location, maxResults: parseInt(ldMax.value, 10) })
+        });
+        if (!r.ok) { const t = await r.text(); showLdError('Server error: ' + t); return; }
+        const { runId } = await r.json();
+        ldRunId = runId;
+        ldSocket.emit('join:pipeline', runId);
+      } catch(e) {
+        showLdError('Network error: ' + e.message);
+        ldRunBtn.disabled = false;
+        ldProgress.style.display = 'none';
+      }
+    });
+
+    // Socket.io pipeline events
+    ldSocket.on('pipeline-progress', ({ runId, message, fetched, total }) => {
+      if (runId !== ldRunId) return;
+      ldProgressMsg.textContent = message || 'Running...';
+      if (total > 0) {
+        const pct = Math.round((fetched / total) * 100);
+        ldProgressFill.style.width = pct + '%';
+        ldProgressCount.textContent = `${fetched} / ${total}`;
+      } else if (fetched > 0) {
+        ldProgressCount.textContent = `${fetched} fetched`;
+        ldProgressFill.style.width = '50%';
+      }
+    });
+
+    ldSocket.on('pipeline-done', ({ runId, records, rawFetched, total }) => {
+      if (runId !== ldRunId) return;
+      ldRunBtn.disabled = false;
+      ldProgress.style.display = 'none';
+      ldRecords = records || [];
+      ldCount.textContent = ldRecords.length;
+      ldTableBody.innerHTML = ldRecords.slice(0, 200).map(renderRow).join('');
+      ldResults.style.display = ldRecords.length ? 'block' : 'none';
+      ldProgressFill.style.width = '100%';
+      if (!ldRecords.length) showLdError(`Pipeline returned 0 results. Try a different query or source.`);
+    });
+
+    ldSocket.on('pipeline-error', ({ runId, error }) => {
+      if (runId !== ldRunId) return;
+      ldRunBtn.disabled = false;
+      ldProgress.style.display = 'none';
+      showLdError('Pipeline error: ' + error);
+    });
+
+    // Checkbox: select-all toggle
+    const ldCheckAll  = document.getElementById('ldCheckAll');
+    const ldSaveSelBtn = document.getElementById('ldSaveSelBtn');
+    const ldSelCount   = document.getElementById('ldSelCount');
+
+    function updateSelectionUI() {
+      const checks = ldTableBody.querySelectorAll('.ld-row-check');
+      const selected = Array.from(checks).filter(c => c.checked);
+      const n = selected.length;
+      if (n > 0) {
+        ldSelCount.textContent = `(${n} selected)`;
+        ldSaveSelBtn.style.display = '';
+      } else {
+        ldSelCount.textContent = '';
+        ldSaveSelBtn.style.display = 'none';
+      }
+      ldCheckAll.indeterminate = n > 0 && n < checks.length;
+      ldCheckAll.checked = checks.length > 0 && n === checks.length;
+    }
+
+    ldCheckAll.addEventListener('change', function() {
+      ldTableBody.querySelectorAll('.ld-row-check').forEach(c => { c.checked = this.checked; });
+      updateSelectionUI();
+    });
+
+    ldTableBody.addEventListener('change', function(e) {
+      if (e.target.classList.contains('ld-row-check')) updateSelectionUI();
+    });
+
+    // Save selected records to DataSet
+    ldSaveSelBtn.addEventListener('click', function() {
+      const selected = Array.from(ldTableBody.querySelectorAll('.ld-row-check:checked'))
+        .map(c => ldRecords[parseInt(c.dataset.idx, 10)])
+        .filter(Boolean);
+      if (selected.length) openSaveToDatasetModal(selected, 'Lead Discovery');
+    });
+
+    // Save all records to DataSet
+    ldSaveBtn.addEventListener('click', function() {
+      if (ldRecords.length) openSaveToDatasetModal(ldRecords, 'Lead Discovery');
+    });
+
+    // (legacy openSaveModal removed — handled by initDsPanel)
+    async function openSaveModal_REMOVED() {
+      if (!ldRecords.length) return;
+      const overlay = document.createElement('div');
+      overlay.className = 'dp-overlay';
+      overlay.innerHTML = `
+        <div class="dp-modal">
+          <div class="dp-modal-head">
+            <span class="dp-modal-title">Save ${ldRecords.length} leads to DataSet</span>
+            <button onclick="this.closest('.dp-overlay').remove()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:18px;line-height:1;">&#x2715;</button>
+          </div>
+          <div class="dp-modal-body">
+            <div>
+              <label class="form-label">Project</label>
+              <select id="dpProjectSel" class="form-control" style="height:38px;"><option value="">Loading...</option></select>
+            </div>
+            <div id="dpDsArea" style="display:none;">
+              <label class="form-label">DataSet <span id="dpDsNote" style="font-weight:400;color:var(--text-3);"></span></label>
+              <div id="dpDsList" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;"></div>
+              <button id="dpNewDsBtn" class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%;">+ Create new DataSet</button>
+            </div>
+            <div id="dpNewDsForm" style="display:none;gap:8px;flex-direction:column;">
+              <input id="dpNewDsName" class="form-control" placeholder="DataSet name" style="height:36px;">
+              <textarea id="dpNewDsDesc" class="form-control" rows="2" placeholder="Description (optional)" style="resize:none;"></textarea>
+              <button id="dpCreateDsBtn" class="btn btn-primary btn-sm">Create DataSet</button>
+            </div>
+          </div>
+          <div class="dp-modal-actions">
+            <button onclick="this.closest('.dp-overlay').remove()" class="btn btn-secondary btn-sm">Cancel</button>
+            <button id="dpSaveConfirm" class="btn btn-primary btn-sm" disabled>Save Leads</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      let selectedProjectId = null;
+      let selectedDataSetId = null;
+      const projSel   = overlay.querySelector('#dpProjectSel');
+      const dsArea    = overlay.querySelector('#dpDsArea');
+      const dsNote    = overlay.querySelector('#dpDsNote');
+      const dsList    = overlay.querySelector('#dpDsList');
+      const newDsBtn  = overlay.querySelector('#dpNewDsBtn');
+      const newDsForm = overlay.querySelector('#dpNewDsForm');
+      const newDsName = overlay.querySelector('#dpNewDsName');
+      const newDsDesc = overlay.querySelector('#dpNewDsDesc');
+      const createDsBtn = overlay.querySelector('#dpCreateDsBtn');
+      const saveConfirm = overlay.querySelector('#dpSaveConfirm');
+
+      // Load projects
+      try {
+        const r = await fetch('/api/dataset/projects', { headers: authHeaders() });
+        const projects = await r.json();
+        projSel.innerHTML = '<option value="">Select project...</option>' +
+          projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('') +
+          '<option value="__new">+ New project...</option>';
+      } catch(e) {
+        projSel.innerHTML = '<option value="">Failed to load projects</option>';
+      }
+
+      projSel.addEventListener('change', async () => {
+        selectedProjectId = projSel.value;
+        selectedDataSetId = null;
+        saveConfirm.disabled = true;
+        newDsForm.style.display = 'none';
+        if (!selectedProjectId || selectedProjectId === '__new') {
+          if (selectedProjectId === '__new') {
+            const name = prompt('New project name:');
+            if (name) {
+              const r = await fetch('/api/dataset/projects', {
+                method:'POST', headers: authHeaders(), body: JSON.stringify({ name })
+              });
+              const proj = await r.json();
+              const opt = new Option(proj.name, proj.id);
+              projSel.insertBefore(opt, projSel.lastElementChild);
+              projSel.value = proj.id;
+              selectedProjectId = proj.id;
+            } else { projSel.value = ''; dsArea.style.display = 'none'; return; }
+          } else { dsArea.style.display = 'none'; return; }
+        }
+        await loadDataSets(selectedProjectId);
+      });
+
+      async function loadDataSets(projectId) {
+        dsArea.style.display = 'block';
+        dsList.innerHTML = '<div style="font-size:12px;color:var(--text-3);">Loading...</div>';
+        try {
+          const r = await fetch(`/api/dataset/projects/${projectId}/datasets`, { headers: authHeaders() });
+          const datasets = await r.json();
+          if (!datasets.length) {
+            dsList.innerHTML = '<div style="font-size:12px;color:var(--text-3);">No datasets yet</div>';
+            dsNote.textContent = '(none yet)';
+          } else {
+            dsNote.textContent = '';
+            dsList.innerHTML = datasets.map(ds =>
+              `<div class="dp-ds-item" data-dsid="${ds.id}">${ds.name} <span style="font-size:11px;color:var(--text-3);">${ds.recordCount || 0} records</span></div>`
+            ).join('');
+            dsList.querySelectorAll('.dp-ds-item').forEach(el => {
+              el.addEventListener('click', () => {
+                dsList.querySelectorAll('.dp-ds-item').forEach(x => x.classList.remove('selected'));
+                el.classList.add('selected');
+                selectedDataSetId = el.dataset.dsid;
+                saveConfirm.disabled = false;
+              });
+            });
+          }
+        } catch(e) {
+          dsList.innerHTML = '<div style="color:#ef4444;font-size:12px;">Failed to load datasets</div>';
+        }
+      }
+
+      newDsBtn.addEventListener('click', () => {
+        newDsForm.style.display = newDsForm.style.display === 'none' ? 'flex' : 'none';
+      });
+
+      createDsBtn.addEventListener('click', async () => {
+        const name = newDsName.value.trim();
+        if (!name) return;
+        createDsBtn.disabled = true;
+        try {
+          const r = await fetch(`/api/dataset/projects/${selectedProjectId}/datasets`, {
+            method: 'POST', headers: authHeaders(),
+            body: JSON.stringify({ name, description: newDsDesc.value.trim() })
+          });
+          const ds = await r.json();
+          selectedDataSetId = ds.id;
+          newDsForm.style.display = 'none';
+          await loadDataSets(selectedProjectId);
+          saveConfirm.disabled = false;
+        } catch(e) {
+          alert('Failed to create dataset: ' + e.message);
+        }
+        createDsBtn.disabled = false;
+      });
+
+      saveConfirm.addEventListener('click', async () => {
+        if (!selectedDataSetId || !ldRecords.length) return;
+        saveConfirm.disabled = true;
+        saveConfirm.textContent = 'Saving...';
+        try {
+          const r = await fetch(`/api/dataset/projects/${selectedProjectId}/datasets/${selectedDataSetId}/records`, {
+            method: 'POST', headers: authHeaders(),
+            body: JSON.stringify({ records: ldRecords })
+          });
+          if (!r.ok) throw new Error(await r.text());
+          overlay.remove();
+          alert(`${ldRecords.length} leads saved to DataSet.`);
+        } catch(e) {
+          alert('Save failed: ' + e.message);
+          saveConfirm.disabled = false;
+          saveConfirm.textContent = 'Save Leads';
+        }
+      });
+    }
+
+    function showLdError(msg) {
+      ldError.textContent = msg;
+      ldError.style.display = 'block';
+      ldRunBtn.disabled = false;
+    }
+
+    // Initialize on load
+    loadSources();
+  })();
+
+
+  // ── Dataset Panel (Studio Projects API) ──────────────────────────────────
+
+  (function initDsPanel() {
+    const dpPanel     = document.getElementById('dpPanel');
+    const newProjBtn  = document.getElementById('newProjectBtn');
+
+    let _dpProjects   = [];
+    let _dpDatasetMap = {};
+    let _dpDatasetParentId = null;
+    let _dpSelectedDatasetId = null;
+
+    function dpFetch(url, opts) {
+      const token = localStorage.getItem('studioToken') || '';
+      const headers = Object.assign({ Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, (opts && opts.headers) || {});
+      return fetch(url, Object.assign({}, opts, { headers }));
+    }
+
+    function _e(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    async function loadDatasets() {
+      dpPanel.innerHTML = '<div class="dp-empty">Loading...</div>';
+      try {
+        const r = await dpFetch('/api/studio/projects?type=dataset&parentId=');
+        if (!r.ok) { dpPanel.innerHTML = '<div class="dp-empty">Auth required</div>'; return; }
+        _dpProjects = await r.json();
+        _dpDatasetMap = {};
+        await Promise.all(_dpProjects.map(async proj => {
+          const r2 = await dpFetch('/api/studio/projects?type=dataset&parentId=' + proj.id);
+          _dpDatasetMap[proj.id] = r2.ok ? await r2.json() : [];
+        }));
+        renderDsPanel();
+      } catch(e) {
+        dpPanel.innerHTML = '<div class="dp-empty">Failed to load</div>';
+      }
+    }
+
+    function renderDsPanel() {
+      if (!_dpProjects.length) {
+        dpPanel.innerHTML = '<div class="dp-empty">No projects yet. Click + Project above.</div>';
+        return;
+      }
+      dpPanel.innerHTML = _dpProjects.map(proj => {
+        const datasets = _dpDatasetMap[proj.id] || [];
+        return `<div>
+          <div class="dp-project-row open">
+            <span>${_e(proj.name)}</span>
+            <button class="dp-add-ds-btn dp-add-ds" data-projid="${proj.id}" data-projname="${_e(proj.name)}">+ DS</button>
+          </div>
+          <div class="dp-datasets-list">
+            ${datasets.length
+              ? datasets.map(ds => `<div class="dp-dataset-row dp-open-ds" data-dsid="${ds.id}" data-dsname="${_e(ds.name)}">
+                  <span>${_e(ds.name)}</span><span class="dp-count">${ds.recordCount||0}</span>
+                </div>`).join('')
+              : '<div class="dp-empty" style="padding:4px 0;">No datasets</div>'
+            }
+          </div>
+        </div>`;
+      }).join('');
+
+      dpPanel.querySelectorAll('.dp-add-ds').forEach(btn => {
+        btn.addEventListener('click', e => { e.stopPropagation(); openNewDatasetModal(btn.dataset.projid, btn.dataset.projname); });
+      });
+      dpPanel.querySelectorAll('.dp-open-ds').forEach(row => {
+        row.addEventListener('click', () => openRecordsModal(row.dataset.dsid, row.dataset.dsname));
+      });
+    }
+
+    newProjBtn.addEventListener('click', () => {
+      document.getElementById('dpProjName').value = '';
+      document.getElementById('dpProjDesc').value = '';
+      document.getElementById('dpNewProjectModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('dpProjName').focus(), 50);
+    });
+
+    document.getElementById('dpProjCreateBtn').addEventListener('click', async () => {
+      const name = document.getElementById('dpProjName').value.trim();
+      if (!name) return;
+      try {
+        const r = await dpFetch('/api/studio/projects', { method:'POST', body: JSON.stringify({ name, description: document.getElementById('dpProjDesc').value.trim(), type:'dataset', parentId:null }) });
+        if (!r.ok) throw new Error(await r.text());
+        document.getElementById('dpNewProjectModal').style.display = 'none';
+        showToast('Project created');
+        await loadDatasets();
+      } catch(e) { alert('Failed: ' + e.message); }
+    });
+
+    function openNewDatasetModal(projId, projName) {
+      _dpDatasetParentId = projId;
+      document.getElementById('dpDatasetModalTitle').textContent = 'New Dataset in ' + projName;
+      document.getElementById('dpDatasetName').value = '';
+      document.getElementById('dpNewDatasetModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('dpDatasetName').focus(), 50);
+    }
+
+    document.getElementById('dpDatasetCreateBtn').addEventListener('click', async () => {
+      const name = document.getElementById('dpDatasetName').value.trim();
+      if (!name || !_dpDatasetParentId) return;
+      try {
+        const r = await dpFetch('/api/studio/projects', { method:'POST', body: JSON.stringify({ name, type:'dataset', parentId:_dpDatasetParentId }) });
+        if (!r.ok) throw new Error(await r.text());
+        document.getElementById('dpNewDatasetModal').style.display = 'none';
+        showToast('Dataset created');
+        await loadDatasets();
+      } catch(e) { alert('Failed: ' + e.message); }
+    });
+
+    window.openSaveToDatasetModal = function(records, label) {
+      window._dpSaveRecords = records;
+      window._dpSelectedDsId = null;
+      document.getElementById('dpSaveTitle').textContent = 'Save ' + records.length + ' records — ' + (label || 'pipeline results');
+      document.getElementById('dpSaveConfirmBtn').disabled = true;
+      const tree = document.getElementById('dpSaveTree');
+      if (!_dpProjects.length) { tree.innerHTML = '<div class="dp-empty">No projects.</div>'; }
+      else {
+        tree.innerHTML = _dpProjects.map(proj => {
+          const datasets = _dpDatasetMap[proj.id] || [];
+          if (!datasets.length) return '';
+          return `<div style="margin-bottom:10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-3);padding:4px 0;">${_e(proj.name)}</div>
+            ${datasets.map(ds => `<div class="dp-save-dataset-item" data-dsid="${ds.id}">
+              ${_e(ds.name)} <span class="dp-count">${ds.recordCount||0}</span>
+            </div>`).join('')}
+          </div>`;
+        }).join('') || '<div class="dp-empty">Create a dataset first.</div>';
+        tree.querySelectorAll('.dp-save-dataset-item').forEach(el => {
+          el.addEventListener('click', () => {
+            tree.querySelectorAll('.dp-save-dataset-item').forEach(x => x.classList.remove('sel'));
+            el.classList.add('sel');
+            window._dpSelectedDsId = el.dataset.dsid;
+            document.getElementById('dpSaveConfirmBtn').disabled = false;
+          });
+        });
+      }
+      document.getElementById('dpSaveToDatasetModal').style.display = 'flex';
+    };
+
+    document.getElementById('dpSaveConfirmBtn').addEventListener('click', async () => {
+      const dsId = window._dpSelectedDsId;
+      const records = window._dpSaveRecords;
+      if (!dsId || !records) return;
+      const btn = document.getElementById('dpSaveConfirmBtn');
+      btn.disabled = true; btn.textContent = 'Saving...';
+      let saved = 0, failed = 0;
+      for (const rec of records) {
+        try {
+          const r = await dpFetch('/api/studio/projects/' + dsId + '/records', { method:'POST', body: JSON.stringify(rec) });
+          if (r.ok) saved++; else failed++;
+        } catch { failed++; }
+      }
+      document.getElementById('dpSaveToDatasetModal').style.display = 'none';
+      showToast(saved + ' saved' + (failed ? ', ' + failed + ' failed' : ''));
+      await loadDatasets();
+      btn.textContent = 'Save Records';
+    });
+
+    let _dpRecords = [];
+
+    async function openRecordsModal(datasetId, datasetName) {
+      document.getElementById('dpRecordsTitle').textContent = datasetName + ' (' + datasetId + ')';
+      document.getElementById('dpRecordsList').innerHTML = '<div class="dp-empty">Loading...</div>';
+      document.getElementById('dpRecordsModal').style.display = 'flex';
+      try {
+        const r = await dpFetch('/api/studio/projects/' + datasetId + '/records?limit=200');
+        const data = await r.json();
+        _dpRecords = Array.isArray(data) ? data : (data.records || []);
+        renderRecordsList();
+      } catch(e) {
+        document.getElementById('dpRecordsList').innerHTML = '<div class="dp-empty" style="color:var(--red);">Failed</div>';
+      }
+    }
+
+    function renderRecordsList() {
+      const el = document.getElementById('dpRecordsList');
+      if (!_dpRecords.length) { el.innerHTML = '<div class="dp-empty">No records</div>'; return; }
+      el.innerHTML = _dpRecords.map((rec, i) => {
+        const title = rec.title || rec.company && rec.company.name || rec.name || ('Record ' + (i+1));
+        const url = rec.url || rec.contact && rec.contact.website || '';
+        const meta = rec.capturedAt ? new Date(rec.capturedAt).toLocaleDateString() : '';
+        return `<div class="rec-item" data-idx="${i}">
+          <div class="rec-item-title">${_e(title)}</div>
+          ${url ? `<div class="rec-item-url">${_e(url)}</div>` : ''}
+          <div class="rec-item-meta">${meta}</div>
+        </div>`;
+      }).join('');
+      el.querySelectorAll('.rec-item').forEach(item => {
+        item.addEventListener('click', () => openRecordDetail(_dpRecords[parseInt(item.dataset.idx, 10)]));
+      });
+    }
+
+    function openRecordDetail(rec) {
+      document.getElementById('dpRecordsModal').style.display = 'none';
+      function flat(obj, prefix, rows) {
+        rows = rows || [];
+        for (const k of Object.keys(obj)) {
+          const v = obj[k]; const key = prefix ? prefix + '.' + k : k;
+          if (v && typeof v === 'object' && !Array.isArray(v)) flat(v, key, rows);
+          else rows.push([key, Array.isArray(v) ? v.join(', ') : String(v ?? '')]);
+        }
+        return rows;
+      }
+      document.getElementById('dpRecordDetailBody').innerHTML = flat(rec, '').map(([k, v]) =>
+        `<div class="rec-detail-field"><span class="rec-detail-key">${_e(k)}</span><span class="rec-detail-val">${_e(v)}</span></div>`
+      ).join('');
+      document.getElementById('dpRecordDetailModal').style.display = 'flex';
+    }
+
+    document.getElementById('dpRecordBackBtn').addEventListener('click', () => {
+      document.getElementById('dpRecordDetailModal').style.display = 'none';
+      document.getElementById('dpRecordsModal').style.display = 'flex';
+    });
+
+    loadDatasets();
+  })();
+</script>
+
+<!-- ── New Project Modal ─────────────────────────────────────────── -->
+<div id="dpNewProjectModal" class="dp-modal-overlay" style="display:none;">
+  <div class="dp-modal">
+    <div class="dp-modal-header">
+      <span class="dp-modal-title">New Project</span>
+      <button class="dp-modal-close" onclick="document.getElementById('dpNewProjectModal').style.display='none'">&#x2715;</button>
+    </div>
+    <div class="dp-modal-body">
+      <div><label class="form-label">Project name</label><input id="dpProjName" class="form-control" placeholder="My Project" style="height:36px;"></div>
+      <div><label class="form-label">Description</label><textarea id="dpProjDesc" class="form-control" rows="2" placeholder="Optional" style="resize:none;"></textarea></div>
+    </div>
+    <div class="dp-modal-actions">
+      <button onclick="document.getElementById('dpNewProjectModal').style.display='none'" class="btn btn-secondary btn-sm">Cancel</button>
+      <button id="dpProjCreateBtn" class="btn btn-primary btn-sm">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── New Dataset Modal ──────────────────────────────────────────── -->
+<div id="dpNewDatasetModal" class="dp-modal-overlay" style="display:none;">
+  <div class="dp-modal">
+    <div class="dp-modal-header">
+      <span class="dp-modal-title" id="dpDatasetModalTitle">New Dataset</span>
+      <button class="dp-modal-close" onclick="document.getElementById('dpNewDatasetModal').style.display='none'">&#x2715;</button>
+    </div>
+    <div class="dp-modal-body">
+      <div><label class="form-label">Dataset name</label><input id="dpDatasetName" class="form-control" placeholder="Leads - Austin TX" style="height:36px;"></div>
+    </div>
+    <div class="dp-modal-actions">
+      <button onclick="document.getElementById('dpNewDatasetModal').style.display='none'" class="btn btn-secondary btn-sm">Cancel</button>
+      <button id="dpDatasetCreateBtn" class="btn btn-primary btn-sm">Create Dataset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Save to Dataset Modal ─────────────────────────────────────── -->
+<div id="dpSaveToDatasetModal" class="dp-modal-overlay" style="display:none;">
+  <div class="dp-modal">
+    <div class="dp-modal-header">
+      <span class="dp-modal-title" id="dpSaveTitle">Save to Dataset</span>
+      <button class="dp-modal-close" onclick="document.getElementById('dpSaveToDatasetModal').style.display='none'">&#x2715;</button>
+    </div>
+    <div class="dp-modal-body">
+      <div id="dpSaveTree" style="max-height:300px;overflow-y:auto;"></div>
+    </div>
+    <div class="dp-modal-actions">
+      <button onclick="document.getElementById('dpSaveToDatasetModal').style.display='none'" class="btn btn-secondary btn-sm">Cancel</button>
+      <button id="dpSaveConfirmBtn" class="btn btn-primary btn-sm" disabled>Save Records</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Records List Modal ────────────────────────────────────────── -->
+<div id="dpRecordsModal" class="dp-modal-overlay" style="display:none;">
+  <div class="dp-modal">
+    <div class="dp-modal-header">
+      <span class="dp-modal-title" id="dpRecordsTitle">Records</span>
+      <button class="dp-modal-close" onclick="document.getElementById('dpRecordsModal').style.display='none'">&#x2715;</button>
+    </div>
+    <div class="dp-modal-body">
+      <div id="dpRecordsList" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+    <div class="dp-modal-actions">
+      <button onclick="document.getElementById('dpRecordsModal').style.display='none'" class="btn btn-secondary btn-sm">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Record Detail Modal ───────────────────────────────────────── -->
+<div id="dpRecordDetailModal" class="dp-modal-overlay" style="display:none;">
+  <div class="dp-modal">
+    <div class="dp-modal-header">
+      <span class="dp-modal-title">Record Detail</span>
+      <button class="dp-modal-close" onclick="document.getElementById('dpRecordDetailModal').style.display='none'">&#x2715;</button>
+    </div>
+    <div class="dp-modal-body">
+      <div id="dpRecordDetailBody" style="max-height:450px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;"></div>
+    </div>
+    <div class="dp-modal-actions">
+      <button id="dpRecordBackBtn" class="btn btn-secondary btn-sm">Back to list</button>
+      <button onclick="document.getElementById('dpRecordDetailModal').style.display='none'" class="btn btn-secondary btn-sm">Close</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

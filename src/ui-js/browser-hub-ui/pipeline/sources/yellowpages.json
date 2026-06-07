@@ -1,0 +1,36 @@
+{
+  "id": "yellowpages",
+  "name": "Yellow Pages",
+  "type": "html",
+  "description": "Scrapes Yellow Pages business listings. Broad coverage of all business categories. No API key required.",
+  "rateLimit": { "delayMs": 3500 },
+  "search": {
+    "urlTemplate": "https://www.yellowpages.com/search?search_terms={{query}}&geo_location_terms={{location}}&page={{page}}",
+    "startPage": 1,
+    "maxPages": 5,
+    "waitForSelector": "div.result"
+  },
+  "extract": {
+    "listSelector": "div.result",
+    "fields": {
+      "name":      { "sel": "a.business-name span, h2.n a",  "attr": "text" },
+      "phone":     { "sel": ".phones .phone",                 "attr": "text" },
+      "street":    { "sel": ".street-address",                "attr": "text" },
+      "locality":  { "sel": ".locality",                      "attr": "text" },
+      "website":   { "sel": "a.track-visit-website",          "attr": "href" },
+      "category":  { "sel": ".categories a:first-child",      "attr": "text" },
+      "rating":    { "sel": ".rating-stars",                  "attr": "class", "transform": "yp_rating" },
+      "sourceUrl": { "sel": "a.business-name",                "attr": "href",  "transform": "yp_url" }
+    }
+  },
+  "outputMap": {
+    "company.name":           "name",
+    "company.category":       "category",
+    "contact.phone":          "phone",
+    "contact.address.street": "street",
+    "contact.address.city":   "locality",
+    "contact.website":        "website",
+    "signals.rating":         "rating",
+    "meta.sourceUrl":         "sourceUrl"
+  }
+}

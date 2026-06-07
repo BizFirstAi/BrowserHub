@@ -1,0 +1,387 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code for Development Teams â€” Introduction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary:        #16A34A;
+  --primary-hover:  #15803D;
+  --primary-light:  #22C55E;
+  --primary-subtle: rgba(22,163,74,0.12);
+  --logo-green:     #0A6C0C;
+  --bg-base:        #080F08;
+  --bg-raised:      #0C150C;
+  --bg-surface:     #172017;
+  --bg-hover:       #1E2B1E;
+  --text-primary:   #F0FDF4;
+  --text-secondary: #D1FAE5;
+  --text-muted:     #86EFAC;
+  --text-dim:       #4B7055;
+  --border-subtle:  rgba(22,163,74,0.08);
+  --border-default: rgba(22,163,74,0.15);
+  --border-strong:  rgba(22,163,74,0.30);
+  --border-primary: rgba(22,163,74,0.50);
+  --glow:           0 0 40px rgba(22,163,74,0.30);
+  --glow-sm:        0 0 20px rgba(22,163,74,0.20);
+  --warn:           #F59E0B;
+  --info:           #3B82F6;
+  --error:          #EF4444;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg-base);color:var(--text-primary);font-family:'Inter',sans-serif}
+
+/* â”€â”€ Progress â”€â”€ */
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--primary-light));transition:width .3s ease;z-index:1000;box-shadow:0 0 10px var(--primary)}
+
+/* â”€â”€ Topbar â”€â”€ */
+#topbar{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;background:rgba(8,15,8,0.96);border-bottom:1px solid var(--border-subtle);z-index:999;backdrop-filter:blur(12px)}
+.tb-left{display:flex;align-items:center;gap:12px}
+.tb-logo{height:26px}
+.tb-sep{width:1px;height:20px;background:var(--border-default)}
+.tb-title{font-size:12px;font-weight:500;color:var(--text-muted);letter-spacing:0.02em}
+.tb-right{display:flex;align-items:center;gap:16px}
+.tb-series{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim)}
+.tb-counter{font-size:13px;color:var(--text-muted);font-variant-numeric:tabular-nums;font-weight:500}
+
+/* â”€â”€ Slide Container â”€â”€ */
+#deck{position:fixed;top:52px;left:0;right:0;bottom:0}
+.slide{position:absolute;inset:0;padding:48px 64px;display:none;flex-direction:column;justify-content:center;overflow:hidden}
+.slide.active{display:flex}
+
+/* â”€â”€ Nav Buttons â”€â”€ */
+#nav-btns{position:fixed;bottom:28px;right:40px;display:flex;gap:8px;z-index:999}
+.nbtn{width:38px;height:38px;border-radius:8px;border:1px solid var(--border-default);background:var(--bg-surface);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;font-size:0}
+.nbtn:hover{border-color:var(--primary);color:var(--primary-light);box-shadow:var(--glow-sm)}
+.nbtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#kbd-hint{position:fixed;bottom:34px;left:40px;font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:6px}
+kbd{display:inline-flex;align-items:center;padding:1px 6px;border-radius:4px;border:1px solid var(--border-default);background:var(--bg-surface);font-size:10px;color:var(--text-muted);font-family:inherit}
+
+/* â”€â”€ Typography â”€â”€ */
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--primary);margin-bottom:14px}
+.eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--primary);box-shadow:0 0 8px var(--primary)}
+h1{font-size:54px;font-weight:800;line-height:1.05;letter-spacing:-0.02em;margin-bottom:20px}
+h1 em{font-style:normal;color:var(--primary-light)}
+h2{font-size:34px;font-weight:700;line-height:1.1;letter-spacing:-0.01em;margin-bottom:6px}
+h2 em{font-style:normal;color:var(--primary-light)}
+h3{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--text-primary)}
+p.lead{font-size:17px;color:var(--text-secondary);line-height:1.65;max-width:680px}
+p.body{font-size:14px;color:var(--text-secondary);line-height:1.6}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);margin-bottom:20px}
+
+/* â”€â”€ Cover Slide â”€â”€ */
+.slide-cover{background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(22,163,74,0.07) 0%,transparent 70%)}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:24px;border:1px solid var(--border-primary);background:var(--primary-subtle);font-size:12px;font-weight:600;color:var(--primary-light);margin-bottom:28px}
+.cover-meta{display:flex;align-items:center;gap:20px;margin-top:24px}
+.cover-tag{font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:6px}
+.cover-dot{width:4px;height:4px;border-radius:50%;background:var(--text-dim)}
+.series-pills{display:flex;gap:8px;margin-top:36px}
+.series-pill{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border-default);color:var(--text-dim);background:var(--bg-surface)}
+.series-pill.active{border-color:var(--primary);color:var(--primary-light);background:var(--primary-subtle)}
+
+/* â”€â”€ Layouts â”€â”€ */
+.col-2{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+.col-2-wide{display:grid;grid-template-columns:1.1fr 0.9fr;gap:28px;align-items:start}
+.col-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.col-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+
+/* â”€â”€ Cards â”€â”€ */
+.card{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;padding:22px}
+.card-accent{border-color:var(--border-primary);box-shadow:var(--glow)}
+.card-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:8px}
+.card-num{font-size:36px;font-weight:800;color:var(--primary-light);line-height:1}
+.card-unit{font-size:12px;color:var(--text-muted);margin-top:2px}
+
+/* â”€â”€ Highlight Box â”€â”€ */
+.hbox{background:rgba(22,163,74,0.07);border:1px solid rgba(22,163,74,0.18);border-left:3px solid var(--primary);border-radius:0 8px 8px 0;padding:14px 18px;font-size:14px;color:var(--text-secondary);line-height:1.6}
+.hbox strong{color:var(--text-primary)}
+
+/* â”€â”€ Code Block â”€â”€ */
+.code-wrap{background:var(--bg-raised);border:1px solid var(--border-default);border-radius:10px;overflow:hidden}
+.code-header{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid var(--border-subtle);background:rgba(0,0,0,0.2)}
+.code-filename{font-size:11px;font-weight:600;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
+.code-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--primary-subtle);color:var(--primary-light);border:1px solid var(--border-strong)}
+.code-body{padding:18px 20px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.75;color:var(--text-secondary);overflow-y:auto;max-height:420px}
+.code-body::-webkit-scrollbar{width:3px}
+.code-body::-webkit-scrollbar-track{background:transparent}
+.code-body::-webkit-scrollbar-thumb{background:var(--primary);border-radius:2px}
+.cm{color:var(--text-dim)}
+.ch{color:var(--text-primary);font-weight:600}
+.ck{color:var(--text-muted)}
+.cv{color:var(--primary-light)}
+.cb{color:var(--primary);font-weight:600}
+.cn{color:var(--warn)}
+
+/* â”€â”€ Tags â”€â”€ */
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:var(--primary-subtle);color:var(--primary-light);border:1px solid var(--border-strong)}
+.tag-muted{background:rgba(255,255,255,0.05);color:var(--text-muted);border-color:var(--border-default)}
+.tag-warn{background:rgba(245,158,11,0.12);color:var(--warn);border-color:rgba(245,158,11,0.25)}
+.tag-info{background:rgba(59,130,246,0.12);color:#60A5FA;border-color:rgba(59,130,246,0.25)}
+
+/* â”€â”€ Check List â”€â”€ */
+.cklist{list-style:none;display:flex;flex-direction:column;gap:9px}
+.cklist li{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:var(--text-secondary);line-height:1.5}
+.ck-icon{width:18px;height:18px;flex-shrink:0;margin-top:1px}
+.ck-icon.green{color:var(--primary-light)}
+.ck-icon.muted{color:var(--text-dim)}
+
+/* â”€â”€ Pipeline â”€â”€ */
+.pipeline{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.ps{padding:8px 14px;border-radius:8px;border:1px solid var(--border-default);background:var(--bg-surface);font-size:12px;font-weight:600;color:var(--text-secondary);white-space:nowrap}
+.ps.active{border-color:var(--primary);background:var(--primary-subtle);color:var(--primary-light)}
+.ps.dim{opacity:0.4}
+.pa{color:var(--text-dim);font-size:14px;font-weight:300}
+
+/* â”€â”€ Steps â”€â”€ */
+.steps{display:flex;flex-direction:column;gap:14px}
+.step{display:flex;gap:14px;align-items:flex-start}
+.step-n{width:26px;height:26px;border-radius:50%;background:var(--primary-subtle);border:1px solid var(--primary);color:var(--primary-light);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-body h3{font-size:14px;margin-bottom:2px}
+.step-body p{font-size:12.5px;color:var(--text-muted);line-height:1.5}
+
+/* â”€â”€ Rule List â”€â”€ */
+.rule-list{display:flex;flex-direction:column;gap:7px}
+.rule-row{display:flex;align-items:center;gap:12px;padding:9px 14px;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px}
+.rule-id{font-size:10px;font-weight:700;color:var(--primary);width:48px;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.rule-name{font-size:13px;color:var(--text-primary);font-weight:500;flex:1}
+.rule-sev{margin-left:auto}
+
+/* â”€â”€ Compare Table â”€â”€ */
+.ctable{width:100%;border-collapse:collapse;font-size:13px}
+.ctable th{text-align:left;padding:9px 14px;background:var(--bg-raised);color:var(--text-dim);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid var(--border-default)}
+.ctable td{padding:9px 14px;border-bottom:1px solid var(--border-subtle);color:var(--text-secondary);vertical-align:top;line-height:1.5}
+.ctable td:first-child{color:var(--text-primary);font-weight:500}
+.ctable td.g{color:var(--primary-light)}
+
+/* â”€â”€ File path â”€â”€ */
+.fpath{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);background:var(--bg-raised);padding:3px 8px;border-radius:4px;border:1px solid var(--border-subtle);display:inline-block;margin-bottom:6px}
+
+/* â”€â”€ Divider â”€â”€ */
+.divider{height:1px;background:var(--border-subtle);margin:16px 0}
+
+/* â”€â”€ Glow dot â”€â”€ */
+.gdot{width:8px;height:8px;border-radius:50%;background:var(--primary);box-shadow:0 0 10px var(--primary);display:inline-block}
+
+/* â”€â”€ Repo block â”€â”€ */
+.repo-block{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:10px;padding:16px 20px;display:flex;flex-direction:column;gap:8px}
+.repo-name{font-size:13px;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:8px}
+.repo-desc{font-size:12px;color:var(--text-muted)}
+.repo-tags{display:flex;gap:6px;flex-wrap:wrap}
+
+/* â”€â”€ Section bg variants â”€â”€ */
+.slide-alt{background:var(--bg-raised)}
+.slide-accent{background:radial-gradient(ellipse 60% 50% at 20% 60%,rgba(22,163,74,0.06) 0%,transparent 60%)}
+
+/* â”€â”€ Animation â”€â”€ */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.slide.active > *{animation:fadeIn 0.35s ease both}
+.slide.active > *:nth-child(2){animation-delay:0.05s}
+.slide.active > *:nth-child(3){animation-delay:0.1s}
+.slide.active > *:nth-child(4){animation-delay:0.15s}
+.slide.active > *:nth-child(5){animation-delay:0.2s}
+
+/* â”€â”€ Next/Teaser â”€â”€ */
+.teaser-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:8px}
+.teaser-card{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:10px}
+.teaser-card.current{border-color:var(--primary);box-shadow:var(--glow)}
+.teaser-num{font-size:28px;font-weight:800;color:var(--primary-light)}
+.teaser-title{font-size:15px;font-weight:700;color:var(--text-primary)}
+.teaser-desc{font-size:12.5px;color:var(--text-muted);line-height:1.55}
+.teaser-topics{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.teaser-topic{font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:6px}
+.teaser-topic::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--text-dim);flex-shrink:0}
+.teaser-card.current .teaser-topic::before{background:var(--primary)}
+.teaser-card.current .teaser-topic{color:var(--text-muted)}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div id="topbar">
+  <div class="tb-left">
+    <img class="tb-logo" src="https://bizfirstai.com/website/assets/Logo/logo-m.png" alt="BizFirstAI" onerror="this.style.display='none'">
+    <div class="tb-sep"></div>
+    <div class="tb-title">Claude Code for Development Teams</div>
+  </div>
+  <div class="tb-right">
+    <div class="tb-series">Series 1 of 3 â€” Introduction</div>
+    <div class="tb-counter" id="counter">1 / 3</div>
+  </div>
+</div>
+
+<div id="deck">
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     SLIDE 01 â€” COVER
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div class="slide slide-cover active" data-slide="1" data-narration="Welcome to Claude Code for Development Teams, Presentation 1 of 3 in the BizFirstAI Engineering Series. In this 25-minute architect-level walkthrough, we will show you how to set up Claude Code as your AI-powered SDLC engine â€” covering terminals, resources, guidelines, and CLAUDE dot md files for C-sharp, React, and SQL Server teams.">
+  <div class="cover-badge">
+    <div class="gdot"></div>
+    YouTube Series â€” BizFirstAI Engineering
+  </div>
+  <h1>Claude Code<br>for <em>Development Teams</em></h1>
+  <p class="lead">How to set up Claude Code as your AI-powered SDLC engine â€” terminals, resources, guidelines, and CLAUDE.md files for C# Â· React Â· SQL Server teams.</p>
+  <div class="cover-meta">
+    <div class="cover-tag">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      ~25 minutes
+    </div>
+    <div class="cover-dot"></div>
+    <div class="cover-tag">Architect-level walkthrough</div>
+    <div class="cover-dot"></div>
+    <div class="cover-tag">Live CLAUDE.md samples included</div>
+  </div>
+  <div class="series-pills">
+    <div class="series-pill active">01 Â· Introduction â† You are here</div>
+    <div class="series-pill">02 Â· Advanced Patterns</div>
+    <div class="series-pill">03 Â· Code Review Agent</div>
+  </div>
+</div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     SLIDE 02 â€” WHAT IS CLAUDE CODE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div class="slide slide-accent" data-slide="2" data-narration="Claude Code is an AI engineer that lives in your terminal. It reads your entire codebase, understanding architecture, conventions, and dependencies across all files. It writes and edits code â€” creating files, implementing features, and applying refactors end to end. It runs commands including builds, tests, lints, SQL execution, and git â€” all in your terminal. The key difference from GitHub Copilot: Claude Code operates on your full codebase with tool access. It is an agent, not an autocomplete.">
+  <div class="eyebrow"><div class="eyebrow-dot"></div>What is Claude Code?</div>
+  <h2>An AI engineer that lives<br>in your <em>terminal</em></h2>
+  <div style="height:20px"></div>
+  <div class="col-2">
+    <div>
+      <ul class="cklist">
+        <li>
+          <svg class="ck-icon green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <span><strong>Reads your entire codebase</strong> â€” understands architecture, conventions, dependencies across all files</span>
+        </li>
+        <li>
+          <svg class="ck-icon green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <span><strong>Writes and edits code</strong> â€” creates files, implements features, applies refactors end-to-end</span>
+        </li>
+        <li>
+          <svg class="ck-icon green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <span><strong>Runs commands</strong> â€” builds, tests, lints, executes SQL, calls git â€” all in your terminal</span>
+        </li>
+        <li>
+          <svg class="ck-icon green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <span><strong>Follows your rules</strong> â€” CLAUDE.md is the contract; Claude reads it at every session start</span>
+        </li>
+        <li>
+          <svg class="ck-icon green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <span><strong>Works autonomously</strong> â€” give a task, it plans, executes, and reports back â€” multi-step</span>
+        </li>
+      </ul>
+      <div style="height:16px"></div>
+      <div class="hbox">
+        <strong>Key difference from GitHub Copilot:</strong> Claude Code operates on your full codebase with tool access â€” it's an agent, not an autocomplete.
+      </div>
+    </div>
+    <div class="col-3" style="grid-template-columns:1fr;gap:12px">
+      <div class="card">
+        <div class="card-lbl">Install</div>
+        <div class="code-wrap">
+          <div class="code-body" style="padding:12px 16px;font-size:12px">
+            <span class="cm"># Global install</span><br>
+            npm install -g @anthropic-ai/claude-code<br><br>
+            <span class="cm"># Launch in any repo</span><br>
+            cd C:\BizFirstGO_FI_AI\BizFirstPayrollV3<br>
+            claude
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-lbl">Supported Environments</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="tag-muted tag">Terminal CLI</span>
+          <span class="tag-muted tag">VS Code extension</span>
+          <span class="tag-muted tag">JetBrains</span>
+          <span class="tag-muted tag">Windows / Mac / Linux</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     SLIDE 03 â€” THE SDLC FIT
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div class="slide" data-slide="3" data-narration="Claude Code fits into every phase of your software development lifecycle. In the Design phase, it benchmarks competitors and generates feature specs. In the Build phase, it scaffolds projects and writes C-sharp, React, and SQL following your conventions. In the Validate phase, it runs rule-based checklists and catches violations. In the Document phase, it generates developer docs and user guides. The BizFirstAI pattern: each SDLC phase becomes a named role with its own Claude terminal session, its own CLAUDE dot md, and its own validation gate.">
+  <div class="eyebrow"><div class="eyebrow-dot"></div>Where Claude Fits</div>
+  <h2>Every phase of your <em>SDLC</em></h2>
+  <div style="height:20px"></div>
+  <div class="col-4" style="margin-bottom:24px">
+    <div class="card">
+      <div class="card-lbl">Design</div>
+      <h3>Research &amp; Spec</h3>
+      <p class="body" style="margin-top:6px">Benchmark competitors, generate feature specs, produce design docs and use-case libraries</p>
+    </div>
+    <div class="card card-accent">
+      <div class="card-lbl">Build</div>
+      <h3>Implement</h3>
+      <p class="body" style="margin-top:6px">Scaffold projects, write C# / React / SQL, follow your naming conventions and architecture standards</p>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Validate</div>
+      <h3>Review &amp; Test</h3>
+      <p class="body" style="margin-top:6px">Run rule-based validation checklists, catch violations, produce structured review reports</p>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Document</div>
+      <h3>User Guides</h3>
+      <p class="body" style="margin-top:6px">Generate developer docs, Atlas Forms, help URLs, and DevelopmentHistoryLog entries</p>
+    </div>
+  </div>
+  <div class="hbox" style="max-width:none">
+    <strong>The BizFirstAI pattern:</strong> Each SDLC phase becomes a named role with its own Claude terminal session, its own CLAUDE.md, its own resources folder, and its own validation gate. Phases run in parallel where possible.
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<div id="nav-btns">
+  <button class="nbtn" id="btn-prev" title="Previous (â†)">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="nbtn" id="btn-next" title="Next (â†’)">
+    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+</div>
+
+<div id="kbd-hint">
+  <kbd>â†</kbd><kbd>â†’</kbd> navigate &nbsp;Â·&nbsp; <kbd>Space</kbd> advance &nbsp;Â·&nbsp; <kbd>F</kbd> fullscreen
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let cur = 0;
+
+function go(n) {
+  slides[cur].classList.remove('active');
+  cur = Math.max(0, Math.min(total - 1, n));
+  slides[cur].classList.add('active');
+  document.getElementById('counter').textContent = (cur + 1) + ' / ' + total;
+  document.getElementById('progress').style.width = ((cur + 1) / total * 100) + '%';
+}
+
+document.getElementById('btn-next').addEventListener('click', () => go(cur + 1));
+document.getElementById('btn-prev').addEventListener('click', () => go(cur - 1));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(cur + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); go(cur - 1); }
+  if (e.key === 'f' || e.key === 'F') { document.documentElement.requestFullscreen?.(); }
+});
+
+// Click right half = next, left half = prev
+document.getElementById('deck').addEventListener('click', e => {
+  if (e.target.closest('#nav-btns')) return;
+  if (e.clientX > window.innerWidth / 2) go(cur + 1); else go(cur - 1);
+});
+
+go(0);
+</script>
+</body>
+</html>

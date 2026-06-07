@@ -1,0 +1,34 @@
+{
+  "id": "google-maps",
+  "name": "Google Maps (Places API)",
+  "type": "api",
+  "description": "Google Places Text Search API. Requires a Google Maps API key with Places API enabled. Free tier includes $200/month credit (~6,600 searches). Set GOOGLE_MAPS_API_KEY in environment or config/app.config.json.",
+  "rateLimit": { "delayMs": 500 },
+  "auth": { "envKey": "GOOGLE_MAPS_API_KEY" },
+  "search": {
+    "urlTemplate": "https://maps.googleapis.com/maps/api/place/textsearch/json?query={{query}}+{{location}}&type=establishment&key={{GOOGLE_MAPS_API_KEY}}",
+    "responsePath": "results",
+    "pagination": { "type": "token", "tokenField": "next_page_token", "tokenParam": "pagetoken", "delayMs": 2000, "maxPages": 5 }
+  },
+  "extract": {
+    "fields": {
+      "name":    { "path": "name" },
+      "address": { "path": "formatted_address" },
+      "rating":  { "path": "rating" },
+      "reviews": { "path": "user_ratings_total" },
+      "status":  { "path": "business_status" },
+      "placeId": { "path": "place_id" },
+      "category": { "path": "types.0" }
+    }
+  },
+  "outputMap": {
+    "company.name":         "name",
+    "company.category":     "category",
+    "contact.address.full": "address",
+    "signals.rating":       "rating",
+    "signals.reviewCount":  "reviews",
+    "signals.status":       "status",
+    "meta.placeId":         "placeId",
+    "meta.source":          "google-maps"
+  }
+}

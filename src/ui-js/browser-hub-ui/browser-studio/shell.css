@@ -1,0 +1,225 @@
+/* ── Browser Hub Shell — sidebar layout
+   Augments main.css without modifying it.
+   All rules are scoped to body.has-sidebar to avoid conflicts.
+   ─────────────────────────────────────────────────────────────── */
+
+/* ── Layout ──────────────────────────────────────────────────── */
+body.has-sidebar {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+body.has-sidebar .main-area {
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto;
+    min-width: 0;
+}
+
+/* Override navbar-based top padding for both class conventions */
+body.has-sidebar .page-wrap  { padding-top: 32px; }
+body.has-sidebar .page       { padding-top: 28px; }
+
+/* ── Sidebar shell ───────────────────────────────────────────── */
+.sidebar {
+    width: 224px;
+    flex-shrink: 0;
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: #07101f;
+    border-right: 1px solid #0f2040;
+    position: sticky;
+    top: 0;
+}
+
+.sidebar::-webkit-scrollbar        { width: 3px; }
+.sidebar::-webkit-scrollbar-track  { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb  { background: #1c3a68; border-radius: 2px; }
+
+/* ── Brand ───────────────────────────────────────────────────── */
+.sb-brand {
+    padding: 16px 14px 12px;
+    border-bottom: 1px solid #0f2040;
+    flex-shrink: 0;
+}
+
+.sb-brand-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.sb-brand-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #2563eb, #4a9eed);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sb-brand-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #e2e8f0;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+.sb-brand-sub {
+    font-size: 10px;
+    color: #4a6080;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* ── Nav ─────────────────────────────────────────────────────── */
+.sb-nav {
+    flex: 1;
+    padding: 8px 8px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sb-section {
+    padding-bottom: 4px;
+    margin-bottom: 2px;
+}
+
+.sb-section + .sb-section {
+    border-top: 1px solid #0f2040;
+    padding-top: 8px;
+    margin-top: 4px;
+}
+
+.sb-section-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #2d4a70;
+    padding: 4px 8px 5px;
+}
+
+.sb-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b8ab0;
+    text-decoration: none;
+    transition: background 0.13s, color 0.13s;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+    width: 100%;
+    text-align: left;
+}
+
+.sb-item:hover {
+    background: #0f2040;
+    color: #b0c8e8;
+}
+
+.sb-item.active {
+    background: rgba(59, 130, 246, 0.14);
+    color: #60a5fa;
+}
+
+.sb-icon {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    stroke-width: 1.8;
+}
+
+.sb-item span {
+    flex: 1;
+}
+
+/* External link badge (Video Studio) */
+.sb-ext-icon {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    opacity: 0.4;
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.sb-footer {
+    flex-shrink: 0;
+    border-top: 1px solid #0f2040;
+    padding: 10px 12px;
+}
+
+.sb-user {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sb-user-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.sb-user-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    flex-shrink: 0;
+}
+
+.sb-user-name {
+    font-size: 11px;
+    color: #4a6080;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sb-signout {
+    font-size: 11px;
+    color: #2d4a70;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 5px;
+    font-family: inherit;
+    flex-shrink: 0;
+    transition: color 0.12s;
+}
+
+.sb-signout:hover { color: #ef4444; }
+
+/* ── Back to Hub link ────────────────────────────────────────── */
+.sb-hub-back {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #2d4a70;
+    text-decoration: none;
+    padding: 6px 4px;
+    border-top: 1px solid #0f2040;
+    margin-bottom: 8px;
+    transition: color 0.13s;
+}
+.sb-hub-back:hover { color: #60a5fa; }

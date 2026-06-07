@@ -1,0 +1,312 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documentation — BrowserHub</title>
+<link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/browser-studio/index.html">
+      
+      <span class="nav-title">BrowserHub</span>
+    </a>
+    <ul class="nav-links">
+      <li><a class="nav-link" href="/browser-studio/index.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        Dashboard
+      </a></li>
+      <li><a class="nav-link" href="/browser-studio/rules.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M12 2v2m0 16v2M4.93 4.93a10 10 0 000 14.14M2 12h2m16 0h2"/></svg>
+        Rules
+      </a></li>
+      <li><a class="nav-link active" href="/browser-studio/docs.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Docs
+      </a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="container" style="display:grid;grid-template-columns:220px 1fr;gap:40px;align-items:start;">
+
+    <!-- Sidebar TOC -->
+    <div style="position:sticky;top:calc(var(--nav-h) + 24px);">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);margin-bottom:12px;">On this page</div>
+      <ul style="display:flex;flex-direction:column;gap:2px;">
+        <li><a href="#getting-started" style="font-size:0.85rem;color:var(--text-2);display:block;padding:5px 10px;border-radius:var(--r-sm);text-decoration:none;" class="toc-link">Getting Started</a></li>
+        <li><a href="#how-it-works" style="font-size:0.85rem;color:var(--text-2);display:block;padding:5px 10px;border-radius:var(--r-sm);text-decoration:none;" class="toc-link">How It Works</a></li>
+        <li><a href="#scanner-flow" style="font-size:0.85rem;color:var(--text-2);display:block;padding:5px 10px;border-radius:var(--r-sm);text-decoration:none;" class="toc-link">Scanner Flow</a></li>
+        <li><a href="#rules-system" style="font-size:0.85rem;color:var(--text-2);display:block;padding:5px 10px;border-radius:var(--r-sm);text-decoration:none;" class="toc-link">Rules System</a></li>
+        <li><a href="#rules-flow" style="font-size:0.85rem;color:var(--text-2);display:block;padding:5px 10px;border-radius:var(--r-sm);text-decoration:none;" class="toc-link">Rule Evaluation</a></li>
+        <li><a href="#api" style="font-size:0.85rem;color:var(--text-2);display:block;padding:5px 10px;border-radius:var(--r-sm);text-decoration:none;" class="toc-link">REST API</a></li>
+        <li><a href="#architecture" style="font-size:0.85rem;color:var(--text-2);display:block;padding:5px 10px;border-radius:var(--r-sm);text-decoration:none;" class="toc-link">Architecture</a></li>
+      </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="docs-content">
+      <div class="page-header" style="margin-bottom:32px;">
+        <h1>Documentation</h1>
+        <p>Complete guide to using and extending BrowserHub.</p>
+      </div>
+
+      <h2 id="getting-started">Getting Started</h2>
+      <div class="step-list">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Install dependencies</h4>
+            <p>Run <code>npm install</code> in the WebSite directory to install Express, Socket.io, and Playwright.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Install browser</h4>
+            <p>Run <code>npm run setup</code> to download Playwright's Chromium browser binary.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Start the server</h4>
+            <p>Run <code>npm start</code> to start the server. Open <code>http://localhost:3000</code> in your browser.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Run your first scan</h4>
+            <p>On the Dashboard, enter a sitemap URL (e.g. <code>https://your-site.com/sitemap.xml</code>) and click Start Scan.</p>
+          </div>
+        </div>
+      </div>
+
+      <h2 id="how-it-works">How It Works</h2>
+      <p>BrowserHub uses <strong>Playwright</strong> (headless Chromium) to visit each URL in your sitemap or URL list. For each page, it evaluates all visible DOM elements against your configured detection rules using <code>window.getComputedStyle()</code> — the same CSS values a browser would render. Findings are streamed back in real-time via WebSocket.</p>
+      <p>The scanner processes URLs sequentially (one page at a time) to avoid overloading target servers. Each scan result is persisted to a local JSON file and is always accessible via the Results page.</p>
+
+      <h2 id="scanner-flow">Scanner Flow</h2>
+      <div class="mermaid-wrap" style="margin-top:16px;">
+        <div class="mermaid-title">Scan Execution Pipeline</div>
+        <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3d6e','primaryTextColor': '#e2e8f0','primaryBorderColor': '#3b82f6','lineColor': '#3b82f6','secondaryColor': '#0e1e38','tertiaryColor': '#0a1526','edgeLabelBackground': '#091525','background': '#091525','nodeBorder': '#1c3a68','fontFamily': 'Inter, sans-serif'}}}%%
+flowchart TD
+    A([POST /api/scans]) --> B{Input Type}
+    B -->|sitemap| C[Fetch XML\nfrom URL]
+    B -->|urls| D[Parse\nLine by Line]
+    C --> E[Parse urlset\nor sitemapindex]
+    E --> F[Resolve\nSub-sitemaps]
+    F --> G[URL Queue]
+    D --> G
+    G --> H[Launch\nChromium]
+    H --> I[page.goto\nwaitUntil: networkidle]
+    I --> J[evaluateRules\nin page context]
+    J --> K{Findings?}
+    K -->|Yes| L[Emit scan:finding\nvia Socket.io]
+    K -->|No| M[Next URL]
+    L --> M
+    M --> N{Queue\nEmpty?}
+    N -->|No| I
+    N -->|Yes| O[browser.close]
+    O --> P([Emit scan:complete\nPersist to JSON])
+
+    style A fill:#1e3d6e,stroke:#3b82f6,color:#e2e8f0
+    style P fill:#14532d,stroke:#16a34a,color:#e2e8f0
+    style L fill:#7c2d12,stroke:#ea580c,color:#e2e8f0
+        </div>
+      </div>
+
+      <h2 id="rules-system">Rules System</h2>
+      <p>Rules are stored in <code>data/store.json</code> and loaded before each scan. Two rule types are supported:</p>
+      <ul>
+        <li><strong>background-color</strong> — matches elements by computed background RGB. Configure <code>minR/G/B</code> (lower bound) and optional <code>maxR/G/B</code> (upper bound), plus <code>minArea</code> to ignore small elements.</li>
+        <li><strong>custom-js</strong> — run any JavaScript inside the live page context. Receives <code>el</code>, <code>st</code>, <code>rect</code>, <code>area</code>. Return a string to flag the element or <code>null</code> to skip. See the <a href="/browser-studio/custom-rules-guide.html" target="_blank">Custom JS Guide</a> for 20+ examples.</li>
+      </ul>
+      <p>Each DOM element matches <em>at most one rule</em> — the first matching rule wins (rules are evaluated in order).</p>
+      <pre><code>// background-color rule
+{
+  "id": "white-bg",
+  "name": "Large White Background",
+  "type": "background-color",
+  "enabled": true,
+  "severity": "high",
+  "config": { "minR": 240, "minG": 240, "minB": 240, "minArea": 50000, "label": "White BG" }
+}
+
+// custom-js rule
+{
+  "id": "rule-1234",
+  "name": "Small Font Size",
+  "type": "custom-js",
+  "enabled": true,
+  "severity": "medium",
+  "config": {
+    "script": "const fs = parseFloat(st.fontSize);\nreturn fs > 0 && fs < 12 ? `${fs}px font-size` : null;",
+    "minArea": 0,
+    "label": "Small Font"
+  }
+}</code></pre>
+
+      <h2 id="rules-flow">Rule Evaluation Flow</h2>
+      <div class="mermaid-wrap" style="margin-top:16px;">
+        <div class="mermaid-title">Per-Element Rule Evaluation (runs inside page context)</div>
+        <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3d6e','primaryTextColor': '#e2e8f0','primaryBorderColor': '#3b82f6','lineColor': '#3b82f6','secondaryColor': '#0e1e38','tertiaryColor': '#0a1526','edgeLabelBackground': '#091525','background': '#091525','fontFamily': 'Inter, sans-serif'}}}%%
+flowchart TD
+    A([document.querySelectorAll *]) --> B[getComputedStyle]
+    B --> C{Visible?}
+    C -->|Hidden| Z([Skip element])
+    C -->|Visible| D[getBoundingClientRect]
+    D --> E{area >= minArea?}
+    E -->|No| Z
+    E -->|Yes| F{Rule type?}
+    F -->|background-color| G[Parse bg RGB]
+    G --> H{RGB in range?}
+    H -->|No| R{More rules?}
+    H -->|Yes| PUSH([Push Finding])
+    F -->|custom-js| J[new Function script]
+    J --> K{Returns value?}
+    K -->|null| R
+    K -->|string or object| PUSH
+    R -->|Yes| F
+    R -->|No| Z
+
+    style A fill:#1e3d6e,stroke:#3b82f6,color:#e2e8f0
+    style PUSH fill:#7c2d12,stroke:#ea580c,color:#e2e8f0
+    style Z fill:#0e1e38,stroke:#1c3a68,color:#94a3b8
+        </div>
+      </div>
+
+      <h2 id="api">REST API</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:0.85rem;">
+        <thead>
+          <tr style="background:var(--bg-input);border-bottom:1px solid var(--border-1);">
+            <th style="padding:10px 14px;text-align:left;color:var(--text-2);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">Method</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--text-2);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">Path</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--text-2);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border-0);">
+            <td style="padding:10px 14px;"><span class="badge badge-blue">GET</span></td>
+            <td style="padding:10px 14px;font-family:var(--mono);font-size:0.8rem;color:var(--text-accent);">/api/scans</td>
+            <td style="padding:10px 14px;color:var(--text-2);">List all scans (most recent first)</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-0);">
+            <td style="padding:10px 14px;"><span class="badge badge-blue">GET</span></td>
+            <td style="padding:10px 14px;font-family:var(--mono);font-size:0.8rem;color:var(--text-accent);">/api/scans/:id</td>
+            <td style="padding:10px 14px;color:var(--text-2);">Get full scan with findings</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-0);">
+            <td style="padding:10px 14px;"><span class="badge badge-green">POST</span></td>
+            <td style="padding:10px 14px;font-family:var(--mono);font-size:0.8rem;color:var(--text-accent);">/api/scans</td>
+            <td style="padding:10px 14px;color:var(--text-2);">Start a new scan <code>{ type, input }</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-0);">
+            <td style="padding:10px 14px;"><span class="badge badge-green">POST</span></td>
+            <td style="padding:10px 14px;font-family:var(--mono);font-size:0.8rem;color:var(--text-accent);">/api/scans/:id/cancel</td>
+            <td style="padding:10px 14px;color:var(--text-2);">Cancel a running scan</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-0);">
+            <td style="padding:10px 14px;"><span class="badge badge-red">DELETE</span></td>
+            <td style="padding:10px 14px;font-family:var(--mono);font-size:0.8rem;color:var(--text-accent);">/api/scans/:id</td>
+            <td style="padding:10px 14px;color:var(--text-2);">Delete a scan record</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-0);">
+            <td style="padding:10px 14px;"><span class="badge badge-blue">GET</span></td>
+            <td style="padding:10px 14px;font-family:var(--mono);font-size:0.8rem;color:var(--text-accent);">/api/rules</td>
+            <td style="padding:10px 14px;color:var(--text-2);">Get all detection rules</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 14px;"><span class="badge badge-yellow">PUT</span></td>
+            <td style="padding:10px 14px;font-family:var(--mono);font-size:0.8rem;color:var(--text-accent);">/api/rules</td>
+            <td style="padding:10px 14px;color:var(--text-2);">Save rules array (full replace)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>WebSocket Events</h3>
+      <ul>
+        <li><code>join:scan(id)</code> — subscribe to real-time events for scan ID</li>
+        <li><code>scan:status</code> — scan status changed</li>
+        <li><code>scan:urls</code> — URL count resolved</li>
+        <li><code>scan:progress</code> — page scan started (current, total, url, percent)</li>
+        <li><code>scan:finding</code> — new finding recorded</li>
+        <li><code>scan:page-error</code> — page failed to load</li>
+        <li><code>scan:complete</code> — scan finished (status, stats)</li>
+        <li><code>scan:error</code> — fatal scan error</li>
+      </ul>
+
+      <h2 id="architecture">System Architecture</h2>
+      <div class="mermaid-wrap" style="margin-top:16px;">
+        <div class="mermaid-title">Component Architecture</div>
+        <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3d6e','primaryTextColor': '#e2e8f0','primaryBorderColor': '#3b82f6','lineColor': '#3b82f6','secondaryColor': '#0e1e38','tertiaryColor': '#0a1526','edgeLabelBackground': '#091525','background': '#091525','fontFamily': 'Inter, sans-serif'}}}%%
+flowchart TB
+    subgraph Browser["Browser Client"]
+        UI["HTML Pages<br/>index / scan / results / rules"]
+        WS["Socket.io Client<br/>(real-time events)"]
+    end
+    subgraph Server["Node.js Server"]
+        EX["Express<br/>Static + REST API"]
+        SIO["Socket.io Server<br/>(WebSocket)"]
+        SC["Scanner<br/>(scanner.js)"]
+        FS[("JSON Data Store<br/>data/store.json")]
+    end
+    subgraph Playwright["Playwright Engine"]
+        CR["Chromium<br/>(headless / visible)"]
+    end
+
+    UI -->|HTTP REST| EX
+    WS -->|WebSocket| SIO
+    EX -->|start scan| SC
+    SC -->|emit events| SIO
+    SC <-->|read/write| FS
+    EX <-->|rules + settings| FS
+    SC -->|launch / evaluate| CR
+
+    style Browser fill:#0e1e38,stroke:#3b82f6
+    style Server fill:#0a1a10,stroke:#16a34a
+    style Playwright fill:#1a0e26,stroke:#7c3aed
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    securityLevel: 'loose'
+});
+
+mermaid.run({ querySelector: '.mermaid' }).then(() => {
+    setTimeout(() => {
+        document.querySelectorAll('.mermaid .edgePath path, .mermaid .edgePaths path').forEach(p => {
+            const len = p.getTotalLength ? p.getTotalLength() : 1200;
+            p.style.strokeDasharray = len;
+            p.style.strokeDashoffset = len;
+            p.style.animation = 'drawEdge 1.6s cubic-bezier(0.4,0,0.2,1) forwards';
+        });
+    }, 300);
+});
+
+document.querySelectorAll('.toc-link').forEach(link => {
+    link.addEventListener('click', () => {
+        document.querySelectorAll('.toc-link').forEach(l => l.style.color = '');
+        link.style.color = 'var(--blue-l)';
+    });
+});
+</script>
+</body>
+</html>

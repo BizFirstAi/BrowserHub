@@ -1,0 +1,300 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — BrowserHub</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card {
+    width: 400px;
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    border-radius: 16px;
+    padding: 40px 36px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .logo svg { color: #4a9eed; }
+
+  .logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f7fafc;
+    letter-spacing: -0.3px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f7fafc;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: #718096;
+    margin-bottom: 32px;
+  }
+
+  .btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 18px;
+    border-radius: 10px;
+    border: 1px solid #2d3748;
+    background: #232b38;
+    color: #e2e8f0;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    text-align: left;
+    margin-bottom: 12px;
+  }
+
+  .btn:hover:not(:disabled) {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .btn .icon { flex-shrink: 0; color: #a0aec0; }
+  .btn.primary-btn { border-color: #2b6cb0; background: #1a3a5c; color: #63b3ed; }
+  .btn.primary-btn:hover:not(:disabled) { background: #1e4a72; border-color: #3182ce; }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #4a5568;
+    font-size: 13px;
+    margin: 8px 0 12px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #2d3748;
+  }
+
+  #status {
+    margin-top: 20px;
+    font-size: 13px;
+    min-height: 20px;
+    text-align: center;
+    color: #718096;
+  }
+
+  #status.error  { color: #fc8181; }
+  #status.info   { color: #63b3ed; }
+  #status.success{ color: #68d391; }
+
+  .spinner-inline {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid #4a5568;
+    border-top-color: #63b3ed;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .google-disabled-note {
+    font-size: 12px;
+    color: #4a5568;
+    text-align: center;
+    margin-top: -4px;
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="23 7 16 12 23 17 23 7"/>
+      <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+    </svg>
+    <span class="logo-text">BrowserHub</span>
+  </div>
+
+  <h1>Sign in</h1>
+  <p class="subtitle">Choose how you'd like to continue</p>
+
+  <button class="btn primary-btn" id="btnMetamask" onclick="connectMetamask()">
+    <span class="icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 4v16"/>
+      </svg>
+    </span>
+    Connect Wallet (Metamask)
+  </button>
+
+  <button class="btn" id="btnGoogle" onclick="connectGoogle()" disabled>
+    <span class="icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8v4l3 3"/>
+      </svg>
+    </span>
+    Continue with Google
+  </button>
+  <div class="google-disabled-note" id="googleNote">Loading…</div>
+
+  <div class="divider">or</div>
+
+  <button class="btn" onclick="connectTest()">
+    <span class="icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    </span>
+    Guest / Test Account
+  </button>
+
+  <div id="status"></div>
+</div>
+
+<script>
+const API = '/api/auth';
+
+function setStatus(msg, type = 'info') {
+    const el = document.getElementById('status');
+    el.className = type;
+    el.innerHTML = msg;
+}
+
+function disableAll(yes) {
+    ['btnMetamask', 'btnGoogle'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = yes || (id === 'btnGoogle' && !window._googleConfigured);
+    });
+}
+
+// ── Google availability check ──────────────────────────────────────────────────
+(async function checkGoogle() {
+    try {
+        const r = await fetch(`${API}/google-configured`);
+        const { configured } = await r.json();
+        window._googleConfigured = configured;
+        const btn  = document.getElementById('btnGoogle');
+        const note = document.getElementById('googleNote');
+        if (configured) {
+            btn.disabled = false;
+            note.textContent = '';
+        } else {
+            note.textContent = 'Not configured — add Google credentials to app.config.json';
+        }
+    } catch {
+        document.getElementById('googleNote').textContent = 'Could not reach server';
+    }
+})();
+
+// ── Metamask ───────────────────────────────────────────────────────────────────
+async function connectMetamask() {
+    if (!window.ethereum) {
+        setStatus('Metamask not detected. Install the Metamask browser extension.', 'error');
+        return;
+    }
+    disableAll(true);
+    try {
+        setStatus('<span class="spinner-inline"></span>Requesting accounts…');
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const address  = accounts[0];
+        if (!address) throw new Error('No account selected in Metamask');
+
+        setStatus('<span class="spinner-inline"></span>Requesting sign challenge…');
+        const cr = await fetch(`${API}/challenge`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address }),
+        });
+        const { nonce } = await cr.json();
+        if (!nonce) throw new Error('Server did not return a nonce');
+
+        setStatus('<span class="spinner-inline"></span>Waiting for signature in Metamask…');
+        const signature = await window.ethereum.request({
+            method: 'personal_sign',
+            params: [nonce, address],
+        });
+
+        setStatus('<span class="spinner-inline"></span>Verifying signature…');
+        const vr = await fetch(`${API}/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address, signature }),
+        });
+        const vd = await vr.json();
+        if (!vr.ok) throw new Error(vd.error || 'Verification failed');
+
+        localStorage.setItem('studioToken', vd.token);
+        setStatus('Signed in. Redirecting…', 'success');
+        setTimeout(() => location.replace('/'), 400);
+    } catch (err) {
+        setStatus(err.message || 'Metamask sign-in failed', 'error');
+        disableAll(false);
+    }
+}
+
+// ── Google ─────────────────────────────────────────────────────────────────────
+function connectGoogle() {
+    if (!window._googleConfigured) return;
+    location.href = `${API}/google`;
+}
+
+// ── Test account ───────────────────────────────────────────────────────────────
+async function connectTest() {
+    disableAll(true);
+    try {
+        setStatus('<span class="spinner-inline"></span>Creating guest account…');
+        const r = await fetch(`${API}/test`, { method: 'POST' });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Failed');
+        localStorage.setItem('studioToken', d.token);
+        setStatus('Guest account created. Redirecting…', 'success');
+        setTimeout(() => location.replace('/'), 400);
+    } catch (err) {
+        setStatus(err.message, 'error');
+        disableAll(false);
+    }
+}
+
+// ── If already logged in, skip login page ─────────────────────────────────────
+(async function checkExistingToken() {
+    const token = localStorage.getItem('studioToken');
+    if (!token) return;
+    try {
+        const r = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) location.replace('/');
+    } catch { /* ignore */ }
+})();
+</script>
+</body>
+</html>

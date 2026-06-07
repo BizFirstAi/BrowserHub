@@ -1,0 +1,40 @@
+{
+  "id": "foursquare",
+  "name": "Foursquare Places",
+  "type": "api",
+  "description": "Foursquare Places Search API. Free tier: 500 calls/day. Set FOURSQUARE_API_KEY in environment or config/app.config.json. Get key at foursquare.com/developers.",
+  "rateLimit": { "delayMs": 300 },
+  "auth": { "envKey": "FOURSQUARE_API_KEY", "headerName": "Authorization" },
+  "search": {
+    "urlTemplate": "https://api.foursquare.com/v3/places/search?query={{query}}&near={{location}}&limit=50&fields=name,tel,website,location,rating,stats,categories",
+    "responsePath": "results",
+    "pagination": { "type": "cursor", "cursorField": "cursor", "cursorParam": "cursor", "maxPages": 4 }
+  },
+  "extract": {
+    "fields": {
+      "name":     { "path": "name" },
+      "phone":    { "path": "tel" },
+      "website":  { "path": "website" },
+      "street":   { "path": "location.address" },
+      "city":     { "path": "location.city" },
+      "state":    { "path": "location.state" },
+      "zip":      { "path": "location.postcode" },
+      "rating":   { "path": "rating" },
+      "checkins": { "path": "stats.totalCheckins" },
+      "category": { "path": "categories.0.name" }
+    }
+  },
+  "outputMap": {
+    "company.name":           "name",
+    "company.category":       "category",
+    "contact.phone":          "phone",
+    "contact.website":        "website",
+    "contact.address.street": "street",
+    "contact.address.city":   "city",
+    "contact.address.state":  "state",
+    "contact.address.zip":    "zip",
+    "signals.rating":         "rating",
+    "signals.checkins":       "checkins",
+    "meta.source":            "foursquare"
+  }
+}

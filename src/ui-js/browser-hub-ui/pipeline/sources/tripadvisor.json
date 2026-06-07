@@ -1,0 +1,36 @@
+{
+  "id": "tripadvisor",
+  "name": "TripAdvisor",
+  "type": "html",
+  "description": "Scrapes TripAdvisor restaurant and attraction listings. Best for hospitality: restaurants, hotels, experiences. No API key required.",
+  "rateLimit": { "delayMs": 4000 },
+  "search": {
+    "urlTemplate": "https://www.tripadvisor.com/Search?q={{query}}+{{location}}&searchSessionId=x&geo=1&pid=3826&lang=en_US",
+    "startPage": 1,
+    "maxPages": 3,
+    "waitForSelector": "[data-automation='searchResult'], [class*='result'], main"
+  },
+  "extract": {
+    "listSelector": "[data-automation='searchResult'], div[class*='resultCard'], div[class*='ResultCard'], div[class*='result_wrap']",
+    "fields": {
+      "name":     { "sel": "[data-automation='result-title'] span, h3, h2",                         "attr": "text" },
+      "rating":   { "sel": "[class*='rating'] svg title, [aria-label*='of 5'], [aria-label*='stars']","attr": "text" },
+      "category": { "sel": "[class*='cuisine'] span, [class*='type'] span, [class*='category'] span","attr": "text" },
+      "address":  { "sel": "[class*='address'] span, [data-automation='address']",                  "attr": "text" },
+      "reviews":  { "sel": "[class*='review'] span, [class*='Review'] span",                        "attr": "text" },
+      "url":      { "sel": "a[href*='/Restaurant'], a[href*='/Hotel'], a[href*='/Attraction'], a[href*='/Search']", "attr": "href", "transform": "ta_url" }
+    }
+  },
+  "transforms": {
+    "ta_url": "prefix:https://www.tripadvisor.com"
+  },
+  "outputMap": {
+    "company.name":         "name",
+    "company.category":     "category",
+    "contact.address.full": "address",
+    "signals.rating":       "rating",
+    "signals.reviews":      "reviews",
+    "meta.sourceUrl":       "url",
+    "meta.source":          "tripadvisor"
+  }
+}

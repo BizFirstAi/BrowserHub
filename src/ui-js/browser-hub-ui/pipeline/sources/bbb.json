@@ -1,0 +1,38 @@
+{
+  "id": "bbb",
+  "name": "Better Business Bureau",
+  "type": "html",
+  "description": "Scrapes BBB business listings with accreditation status and ratings. Good for B2B trust signals. No API key required.",
+  "rateLimit": { "delayMs": 4000 },
+  "search": {
+    "urlTemplate": "https://www.bbb.org/search?find_text={{query}}&find_loc={{location}}&page={{page}}",
+    "startPage": 1,
+    "maxPages": 4,
+    "waitForSelector": "div.card.result-card"
+  },
+  "extract": {
+    "listSelector": "div.card.result-card",
+    "fields": {
+      "name":       { "sel": "h3.result-business-name a span, h3.result-business-name a",  "attr": "text" },
+      "category":   { "sel": "p.text-size-4",                                              "attr": "text" },
+      "grade":      { "sel": "span.result-rating, summary.result-rating, .result-rating",  "attr": "text" },
+      "accredited": { "sel": "img.dtm-search-listing-seal",                                "attr": "alt" },
+      "phone":      { "sel": "a[href^='tel:']",                                            "attr": "text" },
+      "address":    { "sel": "p.text-size-5[translate], p[translate='no']",                "attr": "text" },
+      "url":        { "sel": "h3.result-business-name > a",                                "attr": "href", "transform": "bbb_url" }
+    }
+  },
+  "transforms": {
+    "bbb_url": "prefix:https://www.bbb.org"
+  },
+  "outputMap": {
+    "company.name":        "name",
+    "company.category":    "category",
+    "contact.phone":       "phone",
+    "contact.address.full":"address",
+    "signals.bbbGrade":    "grade",
+    "signals.bbbAccredited":"accredited",
+    "meta.sourceUrl":      "url",
+    "meta.source":         "bbb"
+  }
+}

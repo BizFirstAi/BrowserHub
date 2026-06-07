@@ -1,0 +1,42 @@
+{
+  "id": "angi",
+  "name": "Angi (Home Services)",
+  "type": "html",
+  "description": "Scrapes Angi (formerly Angie's List) contractor and home service provider listings. Best for plumbers, electricians, HVAC, landscaping. No API key required.",
+  "rateLimit": { "delayMs": 4500 },
+  "search": {
+    "urlTemplate": "https://www.angi.com/companylist/us/{{location}}/{{query}}.htm?page={{page}}",
+    "startPage": 1,
+    "maxPages": 4,
+    "waitForSelector": "main, [class*='provider'], [class*='Company'], article"
+  },
+  "extract": {
+    "listSelector": "[class*='provider-card'], [class*='ProviderCard'], [class*='CompanyCard'], article[class], div[data-testid*='card']",
+    "fields": {
+      "name":    { "sel": "[class*='company-name'], [class*='CompanyName'], [itemprop='name'], h2, h3", "attr": "text" },
+      "phone":   { "sel": "[class*='phone-number'], a[href^='tel:'], [itemprop='telephone']",          "attr": "text" },
+      "city":    { "sel": "[class*='city'], [class*='location'] span, [itemprop='addressLocality']",   "attr": "text" },
+      "rating":  { "sel": "[class*='star-rating'], [aria-label*='stars'], [aria-label*='rating']",    "attr": "aria-label" },
+      "reviews": { "sel": "[class*='review-count'], [class*='ReviewCount']",                           "attr": "text" },
+      "years":   { "sel": "[class*='years-in-business'], [class*='YearsInBusiness']",                 "attr": "text" },
+      "verified":{ "sel": "[class*='verified'], [class*='Verified']",                                  "attr": "text" },
+      "category":{ "sel": "[class*='category'] a, [class*='Category'] a",                             "attr": "text" },
+      "url":     { "sel": "a[href*='/profile/'], a[class*='company-name']",                           "attr": "href", "transform": "angi_url" }
+    }
+  },
+  "transforms": {
+    "angi_url": "prefix:https://www.angi.com"
+  },
+  "outputMap": {
+    "company.name":            "name",
+    "company.category":        "category",
+    "contact.phone":           "phone",
+    "contact.address.city":    "city",
+    "signals.rating":          "rating",
+    "signals.reviewCount":     "reviews",
+    "signals.yearsInBusiness": "years",
+    "signals.verified":        "verified",
+    "meta.sourceUrl":          "url",
+    "meta.source":             "angi"
+  }
+}

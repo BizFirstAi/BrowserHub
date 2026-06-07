@@ -1,0 +1,40 @@
+{
+  "id": "manta",
+  "name": "Manta",
+  "type": "html",
+  "description": "Scrapes Manta business directory. Strong coverage of small businesses with phone and website data. No API key required.",
+  "rateLimit": { "delayMs": 3000 },
+  "search": {
+    "urlTemplate": "https://www.manta.com/mb_{{location}}_{{query}}?pg={{page}}",
+    "startPage": 1,
+    "maxPages": 5,
+    "waitForSelector": "main, #main-content, .search-results"
+  },
+  "extract": {
+    "listSelector": "article.search-result, article.company, div[itemtype*='LocalBusiness'], li.result-item, article[class]",
+    "fields": {
+      "name":     { "sel": "[itemprop='name'], a.company-name, h2.company-name, h2 a, h3 a",         "attr": "text" },
+      "phone":    { "sel": "[itemprop='telephone'], span[class*='phone'], .phone a, a[href^='tel:']","attr": "text" },
+      "street":   { "sel": "[itemprop='streetAddress'], .address-street",                            "attr": "text" },
+      "city":     { "sel": "[itemprop='addressLocality'], .address-city",                            "attr": "text" },
+      "state":    { "sel": "[itemprop='addressRegion'], .address-state",                             "attr": "text" },
+      "website":  { "sel": "a[rel='nofollow'][href^='http'], a[class*='website']",                   "attr": "href" },
+      "category": { "sel": ".category a, [class*='category'] a:first-child, [itemprop='description']","attr": "text" },
+      "url":      { "sel": "a[href*='/c/'], a[itemprop='url'], a.company-name",                      "attr": "href", "transform": "manta_url" }
+    }
+  },
+  "transforms": {
+    "manta_url": "prefix:https://www.manta.com"
+  },
+  "outputMap": {
+    "company.name":           "name",
+    "company.category":       "category",
+    "contact.phone":          "phone",
+    "contact.website":        "website",
+    "contact.address.street": "street",
+    "contact.address.city":   "city",
+    "contact.address.state":  "state",
+    "meta.sourceUrl":         "url",
+    "meta.source":            "manta"
+  }
+}
