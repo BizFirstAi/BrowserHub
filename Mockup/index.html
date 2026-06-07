@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrowserHub — UI Mockup</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #181b24;
+    --bg3: #1e222e;
+    --border: #2a2f3e;
+    --accent: #4f8ef7;
+    --accent2: #6b4ff7;
+    --text: #d0d6e8;
+    --text2: #8892aa;
+    --success: #3ecf8e;
+    --warn: #f5a623;
+    --danger: #f55;
+    --font: 'Segoe UI', system-ui, sans-serif;
+    --mono: 'Consolas', 'Fira Code', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; }
+
+  /* NAV */
+  .nav { display: flex; gap: 0; overflow-x: auto; border-b: 1px solid var(--border); background: var(--bg2); }
+  .nav-btn { padding: 10px 18px; cursor: pointer; color: var(--text2); border: none; background: none; font: inherit; white-space: nowrap; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+  .nav-btn:hover { color: var(--text); }
+  .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-title { padding: 10px 20px; font-weight: 700; color: var(--accent); font-size: 15px; border-right: 1px solid var(--border); }
+
+  /* SCREENS */
+  .screen { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .screen.active { display: block; }
+
+  /* TYPOGRAPHY */
+  h2 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  h3 { font-size: 14px; font-weight: 600; color: var(--text2); margin-bottom: 12px; }
+  .page-title { margin-bottom: 20px; }
+  .page-subtitle { color: var(--text2); font-size: 13px; margin-top: 2px; }
+  .annotation { background: rgba(79,142,247,.12); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 6px 6px 0; font-size: 12px; color: var(--text2); margin: 12px 0; }
+  .annotation strong { color: var(--accent); }
+
+  /* LAYOUT */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+  .flex { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+  /* CARD */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .card-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--text2); }
+
+  /* STAT CARD */
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+  /* FORM ELEMENTS */
+  input, select, textarea { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font: inherit; width: 100%; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 4px; }
+  .field { margin-bottom: 14px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* BUTTONS */
+  .btn { padding: 8px 16px; border-radius: 6px; border: none; font: inherit; font-size: 13px; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* BADGE */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: rgba(62,207,142,.15); color: var(--success); }
+  .badge-blue { background: rgba(79,142,247,.15); color: var(--accent); }
+  .badge-orange { background: rgba(245,166,35,.15); color: var(--warn); }
+  .badge-red { background: rgba(255,85,85,.15); color: var(--danger); }
+  .badge-gray { background: rgba(136,146,170,.15); color: var(--text2); }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: var(--bg3); padding: 10px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--text2); border-bottom: 1px solid var(--border); }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tbody tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* SIDEBAR LAYOUT */
+  .sidebar-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; }
+  .sidebar { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 0; }
+  .sidebar-item { padding: 9px 16px; cursor: pointer; color: var(--text2); border-radius: 4px; margin: 2px 8px; transition: background .12s, color .12s; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .sidebar-item:hover { background: var(--bg3); color: var(--text); }
+  .sidebar-item.active { background: rgba(79,142,247,.12); color: var(--accent); }
+  .sidebar-section { padding: 10px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--text2); }
+
+  /* PROGRESS */
+  .progress-bar { background: var(--bg3); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+
+  /* PIPELINE SOURCE */
+  .source-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg3); border-radius: 6px; margin-bottom: 8px; }
+  .source-check { width: 16px; height: 16px; accent-color: var(--accent); }
+
+  /* RESULTS TABLE */
+  .results-toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+
+  /* MOCKUP NOTE */
+  .mockup-note { position: fixed; bottom: 16px; right: 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--text2); z-index: 100; }
+  .mockup-note strong { color: var(--warn); }
+
+  /* ICON PLACEHOLDER */
+  .icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; opacity: .7; font-style: normal; }
+
+  /* VIDEO SLIDE */
+  .slide-thumb { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 8px; text-align: center; cursor: pointer; }
+  .slide-thumb:hover { border-color: var(--accent); }
+  .slide-img { width: 100%; height: 80px; background: var(--bg); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 11px; margin-bottom: 6px; }
+  .slide-num { font-size: 11px; color: var(--text2); }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 48px 24px; color: var(--text2); }
+  .empty-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+
+  .mono { font-family: var(--mono); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-title">BrowserHub</div>
+  <button class="nav-btn active" onclick="show('dashboard')">Dashboard</button>
+  <button class="nav-btn" onclick="show('extractor')">Web Extractor</button>
+  <button class="nav-btn" onclick="show('leads')">Lead Discovery</button>
+  <button class="nav-btn" onclick="show('datasets')">Datasets</button>
+  <button class="nav-btn" onclick="show('scanner')">Scanner</button>
+  <button class="nav-btn" onclick="show('video')">Video Studio</button>
+  <button class="nav-btn" onclick="show('admin')">Admin</button>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div class="screen active" id="screen-dashboard">
+  <div class="page-title">
+    <h2>Dashboard</h2>
+    <p class="page-subtitle">Overview of all active jobs and recent activity</p>
+  </div>
+
+  <div class="annotation"><strong>Developer note:</strong> Stats are fetched from <code>GET /api/admin/stats</code>. Job cards are polled or updated via Socket.io events.</div>
+
+  <div class="grid4" style="margin-bottom:24px">
+    <div class="stat-card"><div class="stat-value">142</div><div class="stat-label">Total Jobs</div></div>
+    <div class="stat-card"><div class="stat-value">3</div><div class="stat-label">Active Now</div></div>
+    <div class="stat-card"><div class="stat-value">8,400</div><div class="stat-label">Records Saved</div></div>
+    <div class="stat-card"><div class="stat-value">12.4 MB</div><div class="stat-label">Storage Used</div></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:20px">
+    <div class="card">
+      <div class="card-header"><span class="card-label">Active Jobs</span></div>
+      <table>
+        <thead><tr><th>Type</th><th>Status</th><th>Progress</th><th>Started</th></tr></thead>
+        <tbody>
+          <tr><td>Pipeline Run</td><td><span class="badge badge-blue">Running</span></td><td><div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div></td><td>2 min ago</td></tr>
+          <tr><td>TTS Job</td><td><span class="badge badge-blue">Running</span></td><td><div class="progress-bar"><div class="progress-fill" style="width:35%"></div></div></td><td>5 min ago</td></tr>
+          <tr><td>Scan</td><td><span class="badge badge-green">Done</span></td><td><div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div></td><td>12 min ago</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-label">Quick Actions</span></div>
+      <div style="display:grid;gap:10px">
+        <button class="btn btn-primary" onclick="show('extractor')">Start Web Extraction</button>
+        <button class="btn btn-secondary" onclick="show('leads')">Discover Leads</button>
+        <button class="btn btn-secondary" onclick="show('scanner')">Run Visual Scan</button>
+        <button class="btn btn-secondary" onclick="show('video')">Generate TTS Narration</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotation"><strong>API:</strong> <code>GET /api/admin/stats</code>, <code>GET /api/scan</code>, <code>GET /api/pipeline/run/:id</code>. Socket.io events: <code>scan-progress</code>, <code>pipeline-progress</code>, <code>tts-progress</code>.</div>
+</div>
+
+<!-- ===== WEB EXTRACTOR ===== -->
+<div class="screen" id="screen-extractor">
+  <div class="page-title">
+    <h2>Web Extractor</h2>
+    <p class="page-subtitle">Scrape metadata, structured data, screenshots, and PDFs from any URL</p>
+  </div>
+
+  <div class="annotation"><strong>Developer note:</strong> Single-URL extraction POSTs to <code>POST /api/extract</code>. Multi-URL mode queues a scan job (<code>POST /api/scan</code>). Real-time progress via Socket.io room <code>scraper:{jobId}</code>.</div>
+
+  <div class="grid2">
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-label">Target URL</span></div>
+        <div class="field">
+          <label>URL</label>
+          <input type="text" value="https://example.com" placeholder="https://example.com or file:///C:/path/file.html">
+        </div>
+        <div class="field-row" style="margin-bottom:14px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" checked style="width:auto"> Screenshot</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" style="width:auto"> PDF</label>
+          <label style="display:flex;align-items:center;gap=6px;cursor:pointer"><input type="checkbox" checked style="width:auto"> JSON-LD</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" checked style="width:auto"> Open Graph</label>
+        </div>
+        <button class="btn btn-primary" style="width:100%">Extract</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-label">Sitemap / URL List</span></div>
+        <div class="field">
+          <label>Sitemap URL or paste URLs (one per line)</label>
+          <textarea rows="4" placeholder="https://example.com/sitemap.xml&#10;or&#10;https://example.com/page1&#10;https://example.com/page2"></textarea>
+        </div>
+        <button class="btn btn-secondary" style="width:100%">Run Scan</button>
+        <div class="annotation" style="margin-top:12px"><strong>Tip:</strong> Sitemap mode crawls up to 500 URLs. Results stream in real-time via Socket.io.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-label">Results</span></div>
+      <div class="field-row" style="margin-bottom:12px">
+        <div><div class="card-label">Title</div><div style="margin-top:4px">Example Domain</div></div>
+        <div><div class="card-label">Status</div><span class="badge badge-green">200 OK</span></div>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <div style="color:var(--text);padding:8px;background:var(--bg3);border-radius:6px;font-size:13px">This domain is for use in illustrative examples in documents.</div>
+      </div>
+      <div class="field">
+        <label>JSON-LD / Structured Data</label>
+        <textarea class="mono" rows="4" readonly>{"@type":"WebSite","name":"Example","url":"https://example.com"}</textarea>
+      </div>
+      <div class="field">
+        <label>Open Graph</label>
+        <textarea class="mono" rows="3" readonly>{"og:title":"Example Domain","og:type":"website"}</textarea>
+      </div>
+      <div class="flex" style="gap:8px">
+        <button class="btn btn-secondary btn-sm">View Screenshot</button>
+        <button class="btn btn-secondary btn-sm">Download PDF</button>
+        <button class="btn btn-secondary btn-sm">Copy JSON</button>
+        <button class="btn btn-primary btn-sm">Save to Dataset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LEAD DISCOVERY ===== -->
+<div class="screen" id="screen-leads">
+  <div class="page-title">
+    <h2>Lead Discovery</h2>
+    <p class="page-subtitle">Search public business directories and export results as datasets</p>
+  </div>
+
+  <div class="annotation"><strong>Developer note:</strong> Pipeline runs are started via <code>POST /api/pipeline/run</code>. Progress streams via Socket.io room <code>pipeline-{runId}</code>. Events: <code>pipeline-progress</code>, <code>pipeline-done</code>, <code>pipeline-error</code>. Sources loaded from <code>GET /api/pipeline/sources</code>.</div>
+
+  <div class="grid2" style="margin-bottom:20px">
+    <div class="card">
+      <div class="card-header"><span class="card-label">Search</span></div>
+      <div class="field">
+        <label>Keyword</label>
+        <input type="text" value="dentist" placeholder="e.g. dentist, restaurant, plumber">
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input type="text" value="Austin TX" placeholder="e.g. Austin TX, New York NY">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="margin-bottom:8px;display:block">Sources</label>
+        <div class="source-item"><input type="checkbox" class="source-check" checked> <strong>Yellow Pages</strong> <span class="badge badge-green">Active</span></div>
+        <div class="source-item"><input type="checkbox" class="source-check" checked> <strong>BBB</strong> <span class="badge badge-green">Active</span> <span style="font-size:11px;color:var(--text2)">— includes rating + accreditation</span></div>
+        <div class="source-item"><input type="checkbox" class="source-check"> <strong>Manta</strong> <span class="badge badge-orange">Needs Work</span></div>
+        <div class="source-item"><input type="checkbox" class="source-check"> <strong>TripAdvisor</strong> <span class="badge badge-orange">Needs Work</span></div>
+        <div class="source-item"><input type="checkbox" class="source-check"> <strong>Angi</strong> <span class="badge badge-orange">Needs Work</span></div>
+      </div>
+      <div class="field">
+        <label>Save to Dataset (optional)</label>
+        <select><option>— Create new dataset —</option><option>Dental Leads Austin 2026</option></select>
+      </div>
+      <button class="btn btn-primary" style="width:100%">Run Pipeline</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-label">Progress</span></div>
+      <div style="margin-bottom:16px">
+        <div class="flex-between" style="margin-bottom:6px"><span>Yellow Pages</span><span class="badge badge-green">33 records</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div class="flex-between" style="margin-bottom:6px"><span>BBB</span><span class="badge badge-blue">Running…</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:45%"></div></div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div class="flex-between" style="margin-bottom:6px"><span>Manta</span><span class="badge badge-gray">Queued</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+      </div>
+      <div class="annotation"><strong>Tip:</strong> Sources run in parallel. Results appear as each source completes — no need to wait for all sources to finish before reviewing results.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between">
+      <div class="card-label">Results — 46 records <span class="badge badge-blue" style="margin-left:8px">3 selected</span></div>
+      <div class="results-toolbar">
+        <button class="btn btn-secondary btn-sm">Select All</button>
+        <button class="btn btn-primary btn-sm">Save Selected (3)</button>
+        <button class="btn btn-secondary btn-sm">Export CSV</button>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th style="width:32px"><input type="checkbox"></th><th>Name</th><th>Rating</th><th>Category</th><th>Phone</th><th>Address</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td><input type="checkbox" checked></td><td>Thiel Pediatric Dentistry</td><td><span class="badge badge-green">A+</span></td><td>Pediatric Dentists</td><td>(512) 555-0100</td><td>123 Main St, Austin TX</td><td>BBB</td></tr>
+        <tr><td><input type="checkbox" checked></td><td>Austin Family Dental</td><td><span class="badge badge-green">A+</span></td><td>General Dentists</td><td>(512) 555-0200</td><td>456 Oak Ave, Austin TX</td><td>Yellow Pages</td></tr>
+        <tr><td><input type="checkbox"></td><td>Capital City Dental</td><td><span class="badge badge-blue">A</span></td><td>General Dentists</td><td>(512) 555-0300</td><td>789 River Rd, Austin TX</td><td>BBB</td></tr>
+        <tr><td><input type="checkbox" checked></td><td>Smile Austin</td><td>—</td><td>Orthodontists</td><td>(512) 555-0400</td><td>321 Congress Ave, Austin TX</td><td>Yellow Pages</td></tr>
+      </tbody>
+    </table>
+    <div class="annotation" style="margin-top:12px"><strong>Multi-select:</strong> Use checkboxes to select records. "Save Selected" saves only checked rows to the chosen dataset. "Export CSV" exports the full result set.</div>
+  </div>
+</div>
+
+<!-- ===== DATASETS ===== -->
+<div class="screen" id="screen-datasets">
+  <div class="page-title">
+    <h2>Datasets</h2>
+    <p class="page-subtitle">Manage scraped records organised into Projects and Datasets</p>
+  </div>
+
+  <div class="annotation"><strong>Developer note:</strong> Projects: <code>GET/POST /api/studio/projects</code>. Datasets: <code>GET/POST /api/studio/projects/:id/datasets</code>. Records: <code>GET /api/studio/datasets/:id/records?page=1&pageSize=50</code>. Export: <code>GET /api/studio/datasets/:id/export?format=csv</code>.</div>
+
+  <div class="sidebar-layout">
+    <div>
+      <div class="sidebar">
+        <div class="sidebar-section">Projects</div>
+        <div class="sidebar-item active">Dental Leads Austin</div>
+        <div class="sidebar-item">Restaurant Leads NYC</div>
+        <div class="sidebar-item">Plumber Leads Chicago</div>
+        <div style="padding:8px 16px"><button class="btn btn-secondary btn-sm" style="width:100%">+ New Project</button></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="flex-between" style="margin-bottom:16px">
+        <div>
+          <h2>Dental Leads Austin</h2>
+          <p style="color:var(--text2);font-size:12px">3 datasets — 254 total records</p>
+        </div>
+        <button class="btn btn-primary btn-sm">+ New Dataset</button>
+      </div>
+
+      <div class="grid3" style="margin-bottom:20px">
+        <div class="card" style="cursor:pointer" onclick="">
+          <div class="card-label">BBB Results 2026-01</div>
+          <div style="font-size:24px;font-weight:700;color:var(--accent);margin:8px 0">87</div>
+          <div style="font-size:12px;color:var(--text2)">records</div>
+          <div class="flex" style="margin-top:12px;gap:6px">
+            <button class="btn btn-secondary btn-sm">View</button>
+            <button class="btn btn-secondary btn-sm">Export CSV</button>
+          </div>
+        </div>
+        <div class="card" style="cursor:pointer">
+          <div class="card-label">YP Results 2026-01</div>
+          <div style="font-size:24px;font-weight:700;color:var(--accent);margin:8px 0">132</div>
+          <div style="font-size:12px;color:var(--text2)">records</div>
+          <div class="flex" style="margin-top:12px;gap:6px">
+            <button class="btn btn-secondary btn-sm">View</button>
+            <button class="btn btn-secondary btn-sm">Export CSV</button>
+          </div>
+        </div>
+        <div class="card" style="cursor:pointer">
+          <div class="card-label">Combined Deduped</div>
+          <div style="font-size:24px;font-weight:700;color:var(--accent);margin:8px 0">35</div>
+          <div style="font-size:12px;color:var(--text2)">records</div>
+          <div class="flex" style="margin-top:12px;gap:6px">
+            <button class="btn btn-secondary btn-sm">View</button>
+            <button class="btn btn-secondary btn-sm">Export CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:12px">
+          <span class="card-label">BBB Results 2026-01 — 87 records</span>
+          <div class="flex" style="gap:8px">
+            <input type="text" style="width:200px" placeholder="Search records…">
+            <button class="btn btn-secondary btn-sm">Export CSV</button>
+            <button class="btn btn-secondary btn-sm">Export JSON</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Name</th><th>Rating</th><th>Phone</th><th>Address</th></tr></thead>
+          <tbody>
+            <tr><td>Thiel Pediatric Dentistry</td><td><span class="badge badge-green">A+</span></td><td>(512) 555-0100</td><td>123 Main St, Austin TX</td></tr>
+            <tr><td>Austin Family Dental</td><td><span class="badge badge-green">A+</span></td><td>(512) 555-0200</td><td>456 Oak Ave, Austin TX</td></tr>
+            <tr><td>Capital City Dental</td><td><span class="badge badge-blue">A</span></td><td>(512) 555-0300</td><td>789 River Rd, Austin TX</td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+          <button class="btn btn-secondary btn-sm">Prev</button>
+          <span style="padding:5px 10px;font-size:12px;color:var(--text2)">Page 1 of 2</span>
+          <button class="btn btn-secondary btn-sm">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCANNER ===== -->
+<div class="screen" id="screen-scanner">
+  <div class="page-title">
+    <h2>Visual Scanner</h2>
+    <p class="page-subtitle">Detect layout regressions, broken images, and rule violations across a site</p>
+  </div>
+
+  <div class="annotation"><strong>Developer note:</strong> <code>POST /api/scan</code> starts a scan. Socket.io room <code>scan:{jobId}</code>. Events: <code>scan-progress</code>, <code>scan-finding</code>, <code>scan-done</code>. Rules loaded from <code>GET /api/rules</code>.</div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-header"><span class="card-label">Scan Configuration</span></div>
+      <div class="field">
+        <label>Mode</label>
+        <select><option>Sitemap URL</option><option>URL List</option></select>
+      </div>
+      <div class="field">
+        <label>Sitemap URL</label>
+        <input type="text" value="https://example.com/sitemap.xml">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="margin-bottom:8px;display:block">Active Rules</label>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer"><input type="checkbox" checked style="width:auto"> Check broken images</label>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer"><input type="checkbox" checked style="width:auto"> Check background color</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" style="width:auto"> Custom JavaScript rule</label>
+      </div>
+      <button class="btn btn-primary" style="width:100%">Start Scan</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-label">Scan Progress</span></div>
+      <div style="margin-bottom:16px">
+        <div class="flex-between" style="margin-bottom:6px"><span>Overall Progress</span><span class="badge badge-blue">24 / 80 pages</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:30%"></div></div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div class="card-label" style="margin-bottom:8px">Live Findings</div>
+        <table>
+          <thead><tr><th>URL</th><th>Rule</th><th>Severity</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">/about</td><td>Broken image</td><td><span class="badge badge-danger badge-red">High</span></td></tr>
+            <tr><td class="mono">/contact</td><td>Background color</td><td><span class="badge badge-orange">Medium</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-danger btn-sm">Cancel Scan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== VIDEO STUDIO ===== -->
+<div class="screen" id="screen-video">
+  <div class="page-title">
+    <h2>Video Studio</h2>
+    <p class="page-subtitle">Generate narrated MP3s from web pages and combine them into MP4 presentations</p>
+  </div>
+
+  <div class="annotation"><strong>Developer note:</strong> TTS jobs: <code>POST /api/tts/jobs</code>. Socket.io room <code>tts:{jobId}</code>. Events: <code>tts-progress</code>, <code>tts-done</code>. Audio download: <code>GET /api/tts/jobs/:id/audio</code>. Video: <code>POST /api/tts/jobs/:id/video</code>. Voices: <code>GET /api/tts/voices</code>.</div>
+
+  <div class="grid2" style="margin-bottom:20px">
+    <div class="card">
+      <div class="card-header"><span class="card-label">TTS Configuration</span></div>
+      <div class="field">
+        <label>Source URL</label>
+        <input type="text" placeholder="https://example.com or file:///C:/path/file.html" value="file:///C:/Presentations/Slides.html">
+        <div style="font-size:11px;color:var(--text2);margin-top:4px">Accepts https://, http://, or local file paths (file:///C:/...)</div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Voice</label>
+          <select>
+            <option>en-US-AriaNeural (Female)</option>
+            <option>en-US-GuyNeural (Male)</option>
+            <option>en-GB-SoniaNeural (Female)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Rate</label>
+          <select><option>Normal (+0%)</option><option>Slow (-10%)</option><option>Fast (+15%)</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Output Folder (optional)</label>
+        <input type="text" placeholder="C:\Users\me\Desktop\output" value="C:\Presentations\Audio">
+      </div>
+      <button class="btn btn-primary" style="width:100%">Generate Audio</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-label">Progress</span></div>
+      <div style="margin-bottom:16px">
+        <div class="flex-between" style="margin-bottom:6px"><span>Slides rendered</span><span class="badge badge-blue">3 / 8</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:37%"></div></div>
+      </div>
+      <div class="card-label" style="margin-bottom:8px">Completed Slides</div>
+      <div class="grid4">
+        <div class="slide-thumb">
+          <div class="slide-img">Slide 1</div>
+          <div class="slide-num">slide-01.mp3 <span class="badge badge-green" style="font-size:10px">Done</span></div>
+        </div>
+        <div class="slide-thumb">
+          <div class="slide-img">Slide 2</div>
+          <div class="slide-num">slide-02.mp3 <span class="badge badge-green" style="font-size:10px">Done</span></div>
+        </div>
+        <div class="slide-thumb">
+          <div class="slide-img">Slide 3</div>
+          <div class="slide-num">slide-03.mp3 <span class="badge badge-green" style="font-size:10px">Done</span></div>
+        </div>
+        <div class="slide-thumb" style="opacity:.4">
+          <div class="slide-img">Slide 4</div>
+          <div class="slide-num">Queued…</div>
+        </div>
+      </div>
+      <div class="flex" style="margin-top:14px;gap:8px">
+        <button class="btn btn-secondary btn-sm">Download All MP3s</button>
+        <button class="btn btn-primary btn-sm">Generate MP4 Video</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN ===== -->
+<div class="screen" id="screen-admin">
+  <div class="page-title">
+    <h2>Admin</h2>
+    <p class="page-subtitle">Server configuration, API keys, webhooks, and observability</p>
+  </div>
+
+  <div class="annotation"><strong>Developer note:</strong> Config: <code>GET/POST /api/admin/config</code>. API keys: <code>GET/POST/DELETE /api/auth/api-keys</code>. Webhooks: <code>GET/POST/PATCH/DELETE /api/webhooks</code>. Metrics: <code>GET /api/metrics</code> + Socket.io <code>metrics</code> group.</div>
+
+  <div class="grid2">
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-label">Server Configuration</span></div>
+        <div class="field"><label>Admin Key</label><input type="password" value="••••••••••••"></div>
+        <div class="field-row">
+          <div class="field"><label>Port</label><input type="text" value="3000"></div>
+          <div class="field"><label>Max Concurrent Jobs</label><input type="text" value="4"></div>
+        </div>
+        <div class="field"><label>Data Directory</label><input type="text" value="./data"></div>
+        <button class="btn btn-primary btn-sm">Save Configuration</button>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-label">API Keys</span></div>
+        <table style="margin-bottom:12px">
+          <thead><tr><th>Name</th><th>Created</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>CI Pipeline</td><td>2026-01-10</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-danger btn-sm">Revoke</button></td></tr>
+            <tr><td>Mobile App</td><td>2026-02-05</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-danger btn-sm">Revoke</button></td></tr>
+          </tbody>
+        </table>
+        <button class="btn btn-secondary btn-sm">+ Generate New Key</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-label">Webhooks</span></div>
+        <table style="margin-bottom:12px">
+          <thead><tr><th>URL</th><th>Events</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="mono">https://hooks.slack.com/…</td><td>scan-done, pipeline-done</td><td><span class="badge badge-green">Active</span></td><td><button class="btn btn-secondary btn-sm">Test</button></td></tr>
+          </tbody>
+        </table>
+        <button class="btn btn-secondary btn-sm">+ Add Webhook</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-label">Observability — Live Metrics</span></div>
+      <div class="grid2" style="margin-bottom:20px">
+        <div class="stat-card"><div class="stat-value" style="font-size:22px">142</div><div class="stat-label">Total Jobs</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:22px;color:var(--success)">138</div><div class="stat-label">Succeeded</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:22px;color:var(--danger)">4</div><div class="stat-label">Failed</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:22px">3</div><div class="stat-label">Active Now</div></div>
+      </div>
+      <div class="card-label" style="margin-bottom:8px">Recent Job Log</div>
+      <table>
+        <thead><tr><th>Time</th><th>Type</th><th>Duration</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>2 min ago</td><td>Pipeline</td><td>45s</td><td><span class="badge badge-blue">Running</span></td></tr>
+          <tr><td>8 min ago</td><td>TTS</td><td>32s</td><td><span class="badge badge-green">Done</span></td></tr>
+          <tr><td>15 min ago</td><td>Scan</td><td>4m 12s</td><td><span class="badge badge-green">Done</span></td></tr>
+          <tr><td>22 min ago</td><td>Extract</td><td>3s</td><td><span class="badge badge-green">Done</span></td></tr>
+          <tr><td>35 min ago</td><td>Pipeline</td><td>—</td><td><span class="badge badge-red">Failed</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="mockup-note">
+  <strong>Mockup</strong> — interactive screen designs<br>
+  <span style="font-size:11px">Click nav tabs to switch screens. No live data.</span>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
